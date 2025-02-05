@@ -9,6 +9,7 @@ import 'package:material_floating_search_bar_2/material_floating_search_bar_2.da
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'credentials.dart';
+import 'package:geolocator/geolocator.dart';
 
 
 class MapWidget extends StatefulWidget {
@@ -38,7 +39,7 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context) {
       ),
       CurrentLocationLayer(
         alignPositionOnUpdate: AlignOnUpdate.always,
-        
+        alignDirectionOnUpdate: AlignOnUpdate.never,
       ),
       Align(
             alignment: Alignment.bottomRight,
@@ -96,7 +97,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     String selectedID;
     
-    void getResults(String input) async{
+    void getResults(String input) async {
 
       String baseURL='https://maps.googleapis.com/maps/api/place/autocomplete/json';
       String type = 'geocode';
