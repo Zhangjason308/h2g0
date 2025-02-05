@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:h2g0/models/Place.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
@@ -19,9 +20,11 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
-Widget buildMap(AnimatedMapController animatedMapController) {
+Widget buildMap(AnimatedMapController mapcontroller, BuildContext context) {
+  final theme = Theme.of(context);
+
   return FlutterMap(
-    mapController: animatedMapController.mapController,
+    mapController: mapcontroller.mapController,
     options: MapOptions(
       initialCenter: LatLng(45.424721, -75.695000), // Center the map over Ottawa
       initialZoom: 14,
@@ -29,9 +32,31 @@ Widget buildMap(AnimatedMapController animatedMapController) {
     children: [
       TileLayer( // Bring your own tiles
         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // For demonstration only
-        userAgentPackageName: 'com.example.app', // Add your app identifier
+        userAgentPackageName: 'com.h2g0.app', // Add your app identifier
         tileProvider: CancellableNetworkTileProvider(),
         // And many more recommended properties!
+      ),
+      CurrentLocationLayer(
+        alignPositionOnUpdate: AlignOnUpdate.always,
+        
+      ),
+      Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: FloatingActionButton(
+                backgroundColor: theme.colorScheme.primary,
+                onPressed: () {
+                  mapcontroller.centerOnPoint(
+                    LatLng(45.424721, -75.695000), zoom: 16
+                  );
+                },
+                child: Icon(
+                  Icons.my_location,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
+            )
       ),
       RichAttributionWidget(
         alignment: AttributionAlignment.bottomLeft, // Include a stylish prebuilt attribution widget that meets all requirments
@@ -47,30 +72,24 @@ Widget buildMap(AnimatedMapController animatedMapController) {
         );
 }
 
+
 class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
   
-  late final _animatedMapController = AnimatedMapController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2000),
-    curve: Curves.easeInOutSine,
-    cancelPreviousAnimations: true, // Default to false
-    );
-
   final _controller = FloatingSearchBarController();
   List<Place> placesList = [];
+
+  late final _animatedMapController = AnimatedMapController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+      curve: Curves.easeInOutSine,
+      cancelPreviousAnimations: true, // Default to false
+      );
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-
-  void zoomMap() {
-    _animatedMapController.centerOnPoint(
-      LatLng(45.424721, -75.695000), zoom: 16
-    );
-  }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -89,8 +108,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
       Response response = await Dio().get(request);
 
       final predictions = response.data['predictions'];
-
-      print(predictions);
 
       List<Place> _displayResults = [];
 
@@ -125,7 +142,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
     return Scaffold(
       body: Stack(
         children: [
-          buildMap(_animatedMapController),
+          buildMap(_animatedMapController, context),
           FloatingSearchBar(
             controller: _controller,
             hint: 'Search...',
@@ -147,7 +164,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
             },
             debounceDelay: const Duration(milliseconds: 500),
             onSubmitted: (query) {
-              print(query);
               placesList = [];
               _controller.close();
             },
@@ -206,9 +222,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
           )
         ]
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        zoomMap();
-      })
-     );
+      );
   }
 }
