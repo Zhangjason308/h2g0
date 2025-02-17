@@ -62,3 +62,4 @@ android/app/key.jks
 google-services.json
 *.xcworkspace
 *lib/credentials.dart
+lib/credentials.dart
