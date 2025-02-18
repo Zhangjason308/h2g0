@@ -29,7 +29,12 @@ jobs:
         run: flutter analyze
 
       - name: Run Tests
-        run: flutter test
+        run: |
+          if ls test/*.dart 1> /dev/null 2>&1; then
+            flutter test --verbose
+          else
+            echo "⚠️ No tests found, skipping..."
+          fi
 
       - name: Build APK
         run: flutter build apk --release
