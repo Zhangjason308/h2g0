@@ -8,12 +8,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'credentials.dart';
+
 
 class MapWidget extends StatefulWidget {
-  const MapWidget(
-    {super.key
-    });
+  final String? placesAPIKey;
+  
+  const MapWidget({super.key, required this.placesAPIKey});
 
   @override
   State<MapWidget> createState() => _MapWidget();
@@ -21,7 +21,7 @@ class MapWidget extends StatefulWidget {
 
 Widget buildMap(AnimatedMapController mapcontroller, BuildContext context) {
   final theme = Theme.of(context);
-
+  
   return FlutterMap(
     mapController: mapcontroller.mapController,
     options: MapOptions(
@@ -94,7 +94,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
   Widget build(BuildContext context) {
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     String selectedID;
-    
+    String? apiKey = widget.placesAPIKey;
+
     void getResults(String input) async {
 
       String baseURL='https://maps.googleapis.com/maps/api/place/autocomplete/json';
@@ -103,7 +104,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
       String radius = '5000';
       //TODO Add session token
 
-      String request = '$baseURL?input=$input&key=$placesAPIKey&type=$type&location=$location&radius=$radius';
+      
+      String request = '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
       Response response = await Dio().get(request);
 
       final predictions = response.data['predictions'];
@@ -127,7 +129,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
       String baseURL='https://maps.googleapis.com/maps/api/place/details/json';
       String fields = 'geometry';
 
-      String request = '$baseURL?input=$address&placeid=$placeId&fields=$fields&key=$placesAPIKey';
+      String request = '$baseURL?input=$address&placeid=$placeId&fields=$fields&key=$apiKey';
       Response response = await Dio().get(request);
 
       final result = response.data['result']['geometry']['location'];

@@ -63,3 +63,4 @@ google-services.json
 *.xcworkspace
 *lib/credentials.dart
 lib/credentials.dart
+assets/.env

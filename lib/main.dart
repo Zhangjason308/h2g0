@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'map_widget.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  await dotenv.load(fileName: ".env"); // First Load dotenv  in main function
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -42,6 +44,8 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MapWidget();
+    final String? apikey = dotenv.env['PLACES_API_KEY'];
+    
+    return MapWidget(placesAPIKey: apikey);
   }
 }
