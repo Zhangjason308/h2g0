@@ -19,7 +19,7 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
-Widget buildMap(AnimatedMapController mapcontroller, BuildContext context) {
+Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers) {
   final theme = Theme.of(context);
   
   return FlutterMap(
@@ -35,6 +35,11 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context) {
         tileProvider: CancellableNetworkTileProvider(),
         // And many more recommended properties!
       ),
+
+      MarkerLayer(
+        markers: markers,
+      ),
+
       CurrentLocationLayer(
         alignPositionOnUpdate: AlignOnUpdate.always,
         alignDirectionOnUpdate: AlignOnUpdate.never,
@@ -77,6 +82,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
   final _controller = FloatingSearchBarController();
   List<Place> placesList = [];
 
+  List<Marker> _markers = [];
+
   late final _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -95,6 +102,23 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     String selectedID;
     String? apiKey = widget.placesAPIKey;
+
+    void addMarker(LatLng coordinates) {
+      setState(() {
+        _markers.add(
+          Marker(
+          width: 40,
+          height: 40,
+          point: coordinates,
+          child: const Icon(
+            Icons.location_pin,
+            color: Colors.red,
+            size: 40,
+            ),
+          ),
+        );
+      });
+    }
 
     void getResults(String input) async {
 
@@ -138,12 +162,14 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
       double lng = result['lng'] as double;
       
       _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
+
+      addMarker(LatLng(lat, lng));
     }
 
     return Scaffold(
       body: Stack(
         children: [
-          buildMap(_animatedMapController, context),
+          buildMap(_animatedMapController, context, _markers),
           FloatingSearchBar(
             controller: _controller,
             hint: 'Search...',
@@ -223,6 +249,15 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin{
           )
         ]
       ),
+      
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Example: Adding static coordinates (ByWard Market, Ottawa)
+          addMarker(LatLng(45.428200, -75.692400));
+        },
+        child: const Icon(Icons.add_location_alt),
+      ),
+
       );
   }
 }
