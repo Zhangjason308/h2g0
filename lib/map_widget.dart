@@ -12,13 +12,13 @@ import 'package:url_launcher/url_launcher.dart';
 class MapWidget extends StatefulWidget {
   final String? placesAPIKey;
   final List washroomLocations;
-  final List waterFountainLocations;
+  //final List waterFountainLocations;
 
   const MapWidget(
       {super.key,
       required this.placesAPIKey,
-      required this.washroomLocations,
-      required this.waterFountainLocations});
+      required this.washroomLocations});
+      //required this.waterFountainLocations});
 
   @override
   State<MapWidget> createState() => _MapWidget();
@@ -85,6 +85,7 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<
 }
 
 class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
+
   final _controller = FloatingSearchBarController();
   List<Place> placesList = [];
 
@@ -103,11 +104,61 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     super.dispose();
   }
 
+@override
+void initState() {
+  super.initState();
+
+  setState(() {
+    _markers.clear();
+    
+    for (var location in widget.washroomLocations) {
+      double lat = (location['Y_COORDINATE'] ?? 0.0) as double; 
+      double lng = (location['X_COORDINATE'] ?? 0.0) as double; 
+
+      _markers.add(
+        Marker(
+          width: 40,
+          height: 40,
+          point: LatLng(lat, lng),
+          child: const Icon(
+            Icons.wc, // Washroom icon
+            color: Colors.blue,
+            size: 40,
+          ),
+        ),
+      );
+    }
+ 
+  });
+}
+
+  // Loop through each water fountain location and create a marker
+  // for (var location in widget.waterFountainLocations) {
+  //   double lat = location['lat'];
+  //   double lng = location['lng'];
+
+  //   _markers.add(
+  //     Marker(
+  //       width: 40,
+  //       height: 40,
+  //       point: LatLng(lat, lng),
+  //       child: const Icon(
+  //         Icons.local_drink, // Water fountain icon
+  //         color: Colors.green,
+  //         size: 40,
+  //       ),
+  //     ),
+  //   );
+  // }
+  // });
+
+
+
   @override
   Widget build(BuildContext context) {
     final isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
-    String selectedID;
+    String? selectedID;
     String? apiKey = widget.placesAPIKey;
 
     void addMarker(LatLng coordinates) {
@@ -137,6 +188,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
       String request =
           '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
+
       Response response = await Dio().get(request);
 
       final predictions = response.data['predictions'];
@@ -157,27 +209,42 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
 
     void getLatLng(String placeId, String address) async {
-      String baseURL =
-          'https://maps.googleapis.com/maps/api/place/details/json';
-      String fields = 'geometry';
+  if (placeId.isEmpty) {
+    print("Error: placeId is empty!");
+    return;
+  }
 
-      String request =
-          '$baseURL?input=$address&placeid=$placeId&fields=$fields&key=$apiKey';
-      Response response = await Dio().get(request);
+  String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
+  String fields = 'geometry';
 
-      final result = response.data['result']['geometry']['location'];
+  String request = '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
+  Response response = await Dio().get(request);
 
-      double lat = result['lat'] as double;
-      double lng = result['lng'] as double;
+  final data = response.data;
 
-      _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
+  if (data == null || !data.containsKey('result')) {
+    print("Error: API response is missing 'result' key!");
+    return;
+  }
 
-      addMarker(LatLng(lat, lng));
-    }
+  final location = data['result']['geometry']['location'];
+
+  if (location == null || location['lat'] == null || location['lng'] == null) {
+    print("Error: lat or lng is null!");
+    return;
+  }
+
+  double lat = location['lat'] as double;
+  double lng = location['lng'] as double;
+
+  _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
+  addMarker(LatLng(lat, lng));
+}
+
 
     return Scaffold(
       body: Stack(children: [
-        buildMap(_animatedMapController, context),
+        buildMap(_animatedMapController, context, _markers),
         FloatingSearchBar(
           controller: _controller,
           hint: 'Search...',
@@ -245,7 +312,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                             selectedID = place.placeid;
                             _controller.query = place.address;
                             _controller.close();
-                            getLatLng(selectedID, place.address);
+                            getLatLng(selectedID!, place.address);
                           });
                     }).toList(),
                   ),
