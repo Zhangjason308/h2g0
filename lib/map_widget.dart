@@ -210,7 +210,6 @@ void initState() {
 
     void getLatLng(String placeId, String address) async {
   if (placeId.isEmpty) {
-    print("Error: placeId is empty!");
     return;
   }
 
@@ -223,14 +222,12 @@ void initState() {
   final data = response.data;
 
   if (data == null || !data.containsKey('result')) {
-    print("Error: API response is missing 'result' key!");
     return;
   }
 
   final location = data['result']['geometry']['location'];
 
   if (location == null || location['lat'] == null || location['lng'] == null) {
-    print("Error: lat or lng is null!");
     return;
   }
 
