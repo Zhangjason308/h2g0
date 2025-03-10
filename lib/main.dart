@@ -59,7 +59,6 @@ class MyHomePage extends StatelessWidget {
         throw Exception('Failed to load data - 1');
       }
     } catch (error) {
-      print('Error fetching data: $error');
       throw Exception('Failed to load data - 2');
     }
   }
