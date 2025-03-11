@@ -89,7 +89,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final _controller = FloatingSearchBarController();
   List<Place> placesList = [];
 
-  List<Marker> _markers = [];
+  final List<Marker> _markers = [];
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
