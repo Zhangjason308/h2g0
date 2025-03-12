@@ -24,7 +24,7 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
-Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers) {
+Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, bool posAdded) {
   final theme = Theme.of(context);
 
   return FlutterMap(
@@ -90,6 +90,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   List<Place> placesList = [];
 
   final List<Marker> _markers = [];
+  bool _posAdded = false;
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -178,6 +179,15 @@ void initState() {
       });
     }
 
+    void addPosMarker(LatLng coordinates) {
+      if (_posAdded) {
+        setState(() {
+          _markers.removeAt(_markers.length-1);
+        });
+      }
+      addMarker(coordinates);
+    }
+
     void getResults(String input) async {
       String baseURL =
           'https://maps.googleapis.com/maps/api/place/autocomplete/json';
@@ -235,13 +245,15 @@ void initState() {
   double lng = location['lng'] as double;
 
   _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
-  addMarker(LatLng(lat, lng));
+  addPosMarker(LatLng(lat, lng));
+  setState(() {
+    _posAdded = true;
+  });
 }
-
 
     return Scaffold(
       body: Stack(children: [
-        buildMap(_animatedMapController, context, _markers),
+        buildMap(_animatedMapController, context, _markers, _posAdded),
         FloatingSearchBar(
           controller: _controller,
           hint: 'Search...',
