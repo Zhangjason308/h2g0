@@ -163,6 +163,12 @@ void initState() {
     String? apiKey = widget.placesAPIKey;
 
     void addMarker(LatLng coordinates) {
+      if (_posAdded) {
+        setState(() {
+          _markers.removeAt(_markers.length-1);
+        });
+      }
+
       setState(() {
         _markers.add(
           Marker(
@@ -177,15 +183,6 @@ void initState() {
           ),
         );
       });
-    }
-
-    void addPosMarker(LatLng coordinates) {
-      if (_posAdded) {
-        setState(() {
-          _markers.removeAt(_markers.length-1);
-        });
-      }
-      addMarker(coordinates);
     }
 
     void getResults(String input) async {
@@ -245,7 +242,7 @@ void initState() {
   double lng = location['lng'] as double;
 
   _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
-  addPosMarker(LatLng(lat, lng));
+  addMarker(LatLng(lat, lng));
   setState(() {
     _posAdded = true;
   });
