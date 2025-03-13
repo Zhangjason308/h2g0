@@ -1,4 +1,4 @@
-Miscellaneous
+# === 📌 Miscellaneous ===
 *.class
 *.log
 *.pyc
@@ -12,67 +12,63 @@ Miscellaneous
 .swiftpm/
 migrate_working_dir/
 
-IntelliJ related
+# === 📌 IntelliJ / VS Code Related ===
 *.iml
 *.ipr
 *.iws
 .idea/
+.vscode/
 .vscode/settings.json
 
-
-The .vscode folder contains launch configuration and tasks you configure in
-VS Code which you may wish to be included in version control, so this line
-is commented out by default.
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
 #.vscode/
 
-=== 📌 Flutter/Dart/Pub Related ===
-/doc/api/
-/ios/Flutter/.last_build_id
-ios/.symlinks/
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
+# === 📌 Flutter Frontend (`flutter/`) ===
+flutter/.dart_tool/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+flutter/.pub-cache/
+flutter/.pub/
+flutter/build/
 
-=== 📌 iOS/macOS Specific ===
-ios/Pods/
-ios/Podfile.lock       # Keep Podfile, but ignore lockfile
-macos/Pods/
-macos/Podfile.lock
-macos/.symlinks/
-macos/Flutter/Flutter.framework
-macos/Flutter/Generated.xcconfig
-ios/DerivedData/
-macos/DerivedData/
-ios/.generated/
+# === 📌 iOS/macOS Specific (Flutter) ===
+flutter/ios/Pods/
+flutter/ios/Podfile.lock       # Keep Podfile, but ignore lockfile
+flutter/macos/Pods/
+flutter/macos/Podfile.lock
+flutter/macos/.symlinks/
+flutter/macos/Flutter/Flutter.framework
+flutter/macos/Flutter/Generated.xcconfig
+flutter/ios/DerivedData/
+flutter/macos/DerivedData/
+flutter/ios/.generated/
 
-=== 📌 Android Specific ===
-android/.gradle/
-android/app/key.jks
-/android/app/debug
-/android/app/profile
-/android/app/release
+# === 📌 Android Specific (Flutter) ===
+flutter/android/.gradle/
+flutter/android/app/key.jks
+flutter/android/app/debug/
+flutter/android/app/profile/
+flutter/android/app/release/
 
-=== 📌 Backend (Node.js) ===
+# === 📌 Backend (Node.js) ===
 backend/node_modules/  # Ignore Node.js dependencies
 backend/.env           # Ignore backend environment variables
 
-=== 📌 Firebase / Credentials ===
-*.p8
-*.jks
-*.keystore
-google-services.json
-*.xcworkspace
-assets/.env
+# === 📌 Firebase / Credentials (Flutter) ===
+flutter/*.p8
+flutter/*.jks
+flutter/*.keystore
+flutter/google-services.json
+flutter/*.xcworkspace
+flutter/assets/.env
 
-=== 📌 Generated Plugin Files (Flutter) ===
-linux/flutter/generated_plugin_registrant.cc
-linux/flutter/generated_plugins.cmake
-macos/Flutter/GeneratedPluginRegistrant.swift
-windows/flutter/generated_plugin_registrant.cc
-windows/flutter/generated_plugins.cmake
-
-=== 📌 MongoDB ===
-/mongoDB_backend/node_modules
+# === 📌 Generated Plugin Files (Flutter) ===
+flutter/linux/flutter/generated_plugin_registrant.cc
+flutter/linux/flutter/generated_plugins.cmake
+flutter/macos/Flutter/GeneratedPluginRegistrant.swift
+flutter/windows/flutter/generated_plugin_registrant.cc
+flutter/windows/flutter/generated_plugins.cmake
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
