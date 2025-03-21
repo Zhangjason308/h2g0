@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'bottom_bar.dart';
 
 class MapWidget extends StatefulWidget {
   final String? placesAPIKey;
@@ -24,7 +25,7 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
-Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, bool posAdded) {
+Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, bool posAdded, Function(Map<String, dynamic>) onPinTap, Map<LatLng, Map<String, dynamic>> markerMetadata,) {
   final theme = Theme.of(context);
 
   return FlutterMap(
@@ -46,7 +47,7 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<
 
       MarkerLayer(
         markers: markers,
-      ),
+     ),
 
       CurrentLocationLayer(
         alignPositionOnUpdate: AlignOnUpdate.always,
@@ -86,11 +87,17 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<
 
 class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
+  final Map<LatLng, Map<String, dynamic>> _markerMetadata = {};
   final _controller = FloatingSearchBarController();
   List<Place> placesList = [];
 
   final List<Marker> _markers = [];
   bool _posAdded = false;
+
+  Map<String, dynamic> _selectedMetadata = {
+    'name': 'Select a location',
+    'address': 'Tap a marker to see details',
+  };
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -98,6 +105,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     curve: Curves.easeInOutSine,
     cancelPreviousAnimations: true, // Default to false
   );
+
+  void _handlePinTap(Map<String, dynamic> metadata) {
+  setState(() {
+    _selectedMetadata = metadata; // Update bottom bar content
+  });
+}
+
 
   @override
   void dispose() {
@@ -115,16 +129,38 @@ void initState() {
     for (var location in widget.washroomLocations) {
       double lat = (location['Y_COORDINATE'] ?? 0.0) as double; 
       double lng = (location['X_COORDINATE'] ?? 0.0) as double; 
+      
+      LatLng position = LatLng(lat, lng);
 
+      Map<String, dynamic> metadata = {
+        'name': location['NAME'],
+        'address': location['ADDRESS'],
+        'telephone': location['REPORT_TELEPHONE'],
+        'hours monday open': location['HOURS_MONDAY_OPEN'],
+        'hours tuesday open': location['HOURS_TUESDAY_OPEN'],
+        'hours wednesday open': location['HOURS_WEDNESDAY_OPEN'],
+        'hours thursday open': location['HOURS_THURSDAY_OPEN'],
+        'hours friday open': location['HOURS_FRIDAY_OPEN'],
+        'hours saturday open': location['HOURS_SATURDAY_OPEN'],
+        'hours sunday open': location['HOURS_SUNDAY_OPEN'],
+      };
+
+      _markerMetadata[position] = metadata;
+      
       _markers.add(
         Marker(
           width: 40,
           height: 40,
           point: LatLng(lat, lng),
-          child: const Icon(
-            Icons.wc, // Washroom icon
-            color: Colors.blue,
-            size: 40,
+          child: GestureDetector(
+            onTap: () {
+              _handlePinTap(_markerMetadata[position]!);
+            },
+            child: const Icon(
+              Icons.wc, // Washroom icon
+              color: Colors.blue,
+              size: 40,
+            ),
           ),
         ),
       );
@@ -132,26 +168,6 @@ void initState() {
  
   });
 }
-
-  // Loop through each water fountain location and create a marker
-  // for (var location in widget.waterFountainLocations) {
-  //   double lat = location['lat'];
-  //   double lng = location['lng'];
-
-  //   _markers.add(
-  //     Marker(
-  //       width: 40,
-  //       height: 40,
-  //       point: LatLng(lat, lng),
-  //       child: const Icon(
-  //         Icons.local_drink, // Water fountain icon
-  //         color: Colors.green,
-  //         size: 40,
-  //       ),
-  //     ),
-  //   );
-  // }
-  // });
 
 
 
@@ -163,27 +179,40 @@ void initState() {
     String? apiKey = widget.placesAPIKey;
 
     void addMarker(LatLng coordinates) {
-      if (_posAdded) {
-        setState(() {
-          _markers.removeAt(_markers.length-1);
-        });
-      }
+  if (_posAdded) {
+    setState(() {
+      _markers.removeLast();
+    });
+  }
 
-      setState(() {
-        _markers.add(
-          Marker(
-          width: 40,
-          height: 40,
-          point: coordinates,
+  _markerMetadata[coordinates] = {
+    'name': 'Searched Location',
+    'address': 'Searched Address'
+  };
+
+  setState(() {
+    _markers.add(
+      Marker(
+        width: 40,
+        height: 40,
+        point: coordinates,
+        child: GestureDetector(
+          onTap: () {
+            _handlePinTap(_markerMetadata[coordinates]!);
+          },
           child: const Icon(
             Icons.location_pin,
             color: Colors.red,
             size: 40,
-            ),
           ),
-        );
-      });
-    }
+        ),
+      ),
+    );
+  });
+}
+
+
+    
 
     void getResults(String input) async {
       String baseURL =
@@ -250,7 +279,21 @@ void initState() {
 
     return Scaffold(
       body: Stack(children: [
-        buildMap(_animatedMapController, context, _markers, _posAdded),
+        buildMap(_animatedMapController, context, _markers, _posAdded, _handlePinTap, _markerMetadata),
+         
+
+        DraggableScrollableSheet(
+          initialChildSize: 0.2, // Shows a small preview
+          minChildSize: 0.2, // Minimum size
+          maxChildSize: 0.8, // Maximum expanded size
+          builder: (context, scrollController) {
+            return bottom_bar(
+              metadata: _selectedMetadata,
+              scrollController: scrollController, // Pass the scroll controller
+            );
+          },
+        ),
+
         FloatingSearchBar(
           controller: _controller,
           hint: 'Search...',
