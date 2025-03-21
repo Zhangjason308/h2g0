@@ -11,12 +11,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 class MapWidget extends StatefulWidget {
   final String? placesAPIKey;
+  final String? graphhopperAPIKey;
   final List washroomLocations;
   //final List waterFountainLocations;
 
   const MapWidget(
       {super.key,
       required this.placesAPIKey,
+      required this.graphhopperAPIKey,
       required this.washroomLocations});
       //required this.waterFountainLocations});
 
@@ -24,9 +26,8 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
-Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, bool posAdded) {
+Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, List<Polyline> polylines, bool posAdded) {
   final theme = Theme.of(context);
-
   return FlutterMap(
     mapController: mapcontroller.mapController,
     options: MapOptions(
@@ -47,10 +48,13 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<
       MarkerLayer(
         markers: markers,
       ),
-
+      
       CurrentLocationLayer(
         alignPositionOnUpdate: AlignOnUpdate.always,
         alignDirectionOnUpdate: AlignOnUpdate.never,
+      ),
+      PolylineLayer(
+        polylines: polylines,
       ),
       Align(
           alignment: Alignment.bottomRight,
@@ -90,7 +94,9 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   List<Place> placesList = [];
 
   final List<Marker> _markers = [];
+  final List<Polyline> _polylines = [];
   bool _posAdded = false;
+  //Marker selectedMarker = 
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -105,33 +111,64 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     super.dispose();
   }
 
-@override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  setState(() {
-    _markers.clear();
-    
-    for (var location in widget.washroomLocations) {
-      double lat = (location['Y_COORDINATE'] ?? 0.0) as double; 
-      double lng = (location['X_COORDINATE'] ?? 0.0) as double; 
+    setState(() {
+      _markers.clear();
+      for (var location in widget.washroomLocations) {
+        double lat = (location['Y_COORDINATE'] ?? 0.0) as double; 
+        double lng = (location['X_COORDINATE'] ?? 0.0) as double;
+        String name =  (location['NAME']) as String;
 
-      _markers.add(
-        Marker(
-          width: 40,
-          height: 40,
-          point: LatLng(lat, lng),
-          child: const Icon(
-            Icons.wc, // Washroom icon
-            color: Colors.blue,
-            size: 40,
+        _markers.add(
+          Marker(
+            width: 40,
+            height: 40,
+            point: LatLng(lat, lng),
+            child: GestureDetector(
+              onTap: () => getDirections(LatLng(45.278593862608204, -75.75449875680987), LatLng(lat,lng)),
+              child: const Icon(
+                Icons.wc, // Washroom icon
+                color: Colors.blue,
+                size: 40,
+              ),
+            ),
           ),
-        ),
-      );
-    }
- 
-  });
-}
+        );
+      }
+  
+    });
+  }
+
+ void getDirections(LatLng source, LatLng destination) async {
+      String baseURL = "https://graphhopper.com/api/1/route";
+      String sourcePos = "${source.latitude},${source.longitude}";
+      String destinationPos = "${destination.latitude},${destination.longitude}";
+      String? key = widget.graphhopperAPIKey;
+
+      String request = '$baseURL?profile=foot&point=$sourcePos&point=$destinationPos&locale=en&points_encoded=false&key=$key';
+      Response response = await Dio().get(request);
+      List<dynamic> points = response.data['paths'][0]['points']['coordinates'];
+      List<LatLng> coords = [];
+      for (dynamic cord in points) {
+        coords.add(LatLng(cord[1], cord[0]));
+      }
+      setState(() {
+        _polylines.clear();
+
+        _polylines.add(
+          Polyline(
+            points: coords,
+            color: Colors.red,
+            strokeWidth: 5.0
+          )
+        );
+      });
+
+      
+  }
 
   // Loop through each water fountain location and create a marker
   // for (var location in widget.waterFountainLocations) {
@@ -152,7 +189,6 @@ void initState() {
   //   );
   // }
   // });
-
 
 
   @override
@@ -189,15 +225,15 @@ void initState() {
       String baseURL =
           'https://maps.googleapis.com/maps/api/place/autocomplete/json';
       String type = 'geocode';
-      String location = '45.424721 -75.695000';
-      String radius = '5000';
+      String location = '45.424721\%2C-75.695000';
+      String radius = '50000';
+      input = input.replaceAll(" ", "\%2C");
       //TODO Add session token
 
       String request =
-          '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
+          '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius&strictbounds=true';
 
       Response response = await Dio().get(request);
-
       final predictions = response.data['predictions'];
 
       List<Place> displayResults = [];
@@ -216,9 +252,9 @@ void initState() {
     }
 
     void getLatLng(String placeId, String address) async {
-  if (placeId.isEmpty) {
-    return;
-  }
+      if (placeId.isEmpty) {
+        return;
+    }
 
   String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
   String fields = 'geometry';
@@ -250,7 +286,7 @@ void initState() {
 
     return Scaffold(
       body: Stack(children: [
-        buildMap(_animatedMapController, context, _markers, _posAdded),
+        buildMap(_animatedMapController, context, _markers, _polylines, _posAdded),
         FloatingSearchBar(
           controller: _controller,
           hint: 'Search...',

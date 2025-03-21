@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 Future<void> main() async {
-  await dotenv.load(fileName: ".env"); // First Load dotenv  in main function
+  await dotenv.load(fileName: "assets/.env"); // First Load dotenv  in main function
   runApp(MyApp());
 }
 
@@ -51,7 +51,7 @@ class MyHomePage extends StatelessWidget {
     try {
       //final response = await http.get(Uri.parse('$apiUrl/locations'));
       final response =
-          await http.get(Uri.parse('http://localhost:5001/locations'));
+          await http.get(Uri.parse('http://192.168.2.55:5001/locations'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data;
@@ -66,6 +66,7 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String? apikey = dotenv.env['PLACES_API_KEY'];
+    final String? graphapikey = dotenv.env['GRAPHHOPPER_API_KEY'];
 
     //return MapWidget(placesAPIKey: apikey);
 
@@ -85,6 +86,7 @@ class MyHomePage extends StatelessWidget {
             // Return the MapWidget with fetched data
             return MapWidget(
               placesAPIKey: apikey, // Pass the API key to MapWidget
+              graphhopperAPIKey: graphapikey,
               washroomLocations: washroomLocations,
               //waterFountainLocations: waterFountainLocations,
             );
