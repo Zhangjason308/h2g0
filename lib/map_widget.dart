@@ -91,6 +91,9 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final _controller = FloatingSearchBarController();
   List<Place> placesList = [];
 
+  final DraggableScrollableController _bottomSheetController = DraggableScrollableController();
+  bool _isBottomSheetVisible = false;
+
   final List<Marker> _markers = [];
   bool _posAdded = false;
 
@@ -108,16 +111,28 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
   void _handlePinTap(Map<String, dynamic> metadata) {
   setState(() {
-    _selectedMetadata = metadata; // Update bottom bar content
+    _selectedMetadata = metadata;
+    _isBottomSheetVisible = true;
+  });
+
+  Future.delayed(Duration(milliseconds: 100), () {
+    _bottomSheetController.animateTo(
+      0.3,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   });
 }
 
 
+
+
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _controller.dispose();
+  _bottomSheetController.dispose();
+  super.dispose();
+}
 
 @override
 void initState() {
@@ -279,20 +294,44 @@ void initState() {
 
     return Scaffold(
       body: Stack(children: [
-        buildMap(_animatedMapController, context, _markers, _posAdded, _handlePinTap, _markerMetadata),
-         
-
-        DraggableScrollableSheet(
-          initialChildSize: 0.2, // Shows a small preview
-          minChildSize: 0.2, // Minimum size
-          maxChildSize: 0.8, // Maximum expanded size
-          builder: (context, scrollController) {
-            return bottom_bar(
-              metadata: _selectedMetadata,
-              scrollController: scrollController, // Pass the scroll controller
-            );
+        GestureDetector( 
+          onTap: () {
+            if (_isBottomSheetVisible) { 
+              _bottomSheetController.animateTo(
+                0.0,
+                duration: Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+              setState(() {
+                _isBottomSheetVisible = false;
+              });
+            }
           },
+          child: buildMap(_animatedMapController, context, _markers, _posAdded, _handlePinTap, _markerMetadata),
         ),
+
+        if (_isBottomSheetVisible)
+  Align(
+    alignment: Alignment.bottomCenter,
+    child: DraggableScrollableSheet(
+      controller: _bottomSheetController,
+      initialChildSize: 0.1, 
+      minChildSize: 0.1, 
+      maxChildSize: 0.8, 
+      expand: false,
+      snap: true, 
+      snapSizes: [0.1, 0.3, 0.8], 
+      builder: (context, scrollController) {
+        return bottom_bar(
+          metadata: _selectedMetadata,
+          scrollController: scrollController,
+        );
+      },
+    ),
+  ),
+
+
+
 
         FloatingSearchBar(
           controller: _controller,
