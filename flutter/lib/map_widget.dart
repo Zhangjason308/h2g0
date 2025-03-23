@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:h2g0/models/marker_state.dart';
 import 'package:h2g0/models/place.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
@@ -26,8 +29,8 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
-Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, List<Polyline> polylines, bool posAdded) {
-  final theme = Theme.of(context);
+Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, List<Polyline> polylines, bool posAdded, StreamController<double?> alignposstream, AlignOnUpdate alignonupdate) {
+  
   return FlutterMap(
     mapController: mapcontroller.mapController,
     options: MapOptions(
@@ -50,28 +53,13 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<
       ),
       
       CurrentLocationLayer(
-        alignPositionOnUpdate: AlignOnUpdate.always,
-        alignDirectionOnUpdate: AlignOnUpdate.never,
+        alignPositionStream: alignposstream.stream,
+        alignPositionOnUpdate: alignonupdate,
       ),
       PolylineLayer(
         polylines: polylines,
       ),
-      Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: FloatingActionButton(
-              backgroundColor: theme.colorScheme.primary,
-              onPressed: () {
-                mapcontroller.centerOnPoint(LatLng(45.424721, -75.695000),
-                    zoom: 16);
-              },
-              child: Icon(
-                Icons.my_location,
-                color: theme.colorScheme.onPrimary,
-              ),
-            ),
-          )),
+      
       RichAttributionWidget(
         alignment: AttributionAlignment
             .bottomLeft, // Include a stylish prebuilt attribution widget that meets all requirments
@@ -96,7 +84,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final List<Marker> _markers = [];
   final List<Polyline> _polylines = [];
   bool _posAdded = false;
-  //Marker selectedMarker = 
+  MarkerState? selectedMarker;
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -104,9 +92,12 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     curve: Curves.easeInOutSine,
     cancelPreviousAnimations: true, // Default to false
   );
-
+  late AlignOnUpdate _alignPositionOnUpdate;
+  late final StreamController<double?> _alignPositionStreamController;
+  
   @override
   void dispose() {
+    _alignPositionStreamController.close();
     _controller.dispose();
     super.dispose();
   }
@@ -114,35 +105,89 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-
+    selectedMarker = null;
+    _alignPositionOnUpdate = AlignOnUpdate.always;
+    _alignPositionStreamController = StreamController<double?>();
     setState(() {
       _markers.clear();
+      int mark = 0;
       for (var location in widget.washroomLocations) {
         double lat = (location['Y_COORDINATE'] ?? 0.0) as double; 
         double lng = (location['X_COORDINATE'] ?? 0.0) as double;
         String name =  (location['NAME']) as String;
+        int position = mark;
 
         _markers.add(
-          Marker(
+          MarkerState(
             width: 40,
             height: 40,
+            name: name,
+            listPos: mark,
             point: LatLng(lat, lng),
             child: GestureDetector(
-              onTap: () => getDirections(LatLng(45.278593862608204, -75.75449875680987), LatLng(lat,lng)),
+              onTap: () {
+                selectedAMarker(_markers[position]);
+              },
               child: const Icon(
                 Icons.wc, // Washroom icon
                 color: Colors.blue,
                 size: 40,
               ),
-            ),
+            )
           ),
         );
+        mark++;
       }
   
     });
   }
 
- void getDirections(LatLng source, LatLng destination) async {
+  void selectedAMarker(Marker marker) {
+    MarkerState mark = marker as MarkerState;
+    print("${mark.name} at ${mark.point}");
+    MarkerState? previousMarker = selectedMarker;
+
+    selectedMarker = mark;
+
+    MarkerState updatedMarker = MarkerState(
+      width: 40,
+      height: 40,
+      point: mark.point, 
+      child: const Icon(
+        Icons.wc, // Washroom icon
+        color: Colors.red,
+        size: 40,
+      ), 
+      name: mark.name, 
+      listPos: mark.listPos);
+
+      setState(() {
+        _markers[mark.listPos] = updatedMarker;
+        if (previousMarker != null) {
+          MarkerState returnMarker = MarkerState(
+            width: 40,
+            height: 40,
+            name: previousMarker.name,
+            listPos: previousMarker.listPos,
+            point: previousMarker.point,
+            child: GestureDetector(
+              onTap: () {
+                selectedAMarker(_markers[previousMarker.listPos]);
+              },
+              child: const Icon(
+                Icons.wc, // Washroom icon
+                color: Colors.blue,
+                size: 40,
+              ),
+            )
+          );
+
+          _markers[previousMarker.listPos] = returnMarker;
+        }
+      });
+  }
+
+  void getDirections(LatLng source, LatLng destination) async {
       String baseURL = "https://graphhopper.com/api/1/route";
       String sourcePos = "${source.latitude},${source.longitude}";
       String destinationPos = "${destination.latitude},${destination.longitude}";
@@ -166,8 +211,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           )
         );
       });
-
-      
   }
 
   // Loop through each water fountain location and create a marker
@@ -193,6 +236,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
     String? selectedID;
@@ -254,39 +298,39 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     void getLatLng(String placeId, String address) async {
       if (placeId.isEmpty) {
         return;
-    }
+      }
 
-  String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
-  String fields = 'geometry';
+      String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
+      String fields = 'geometry';
 
-  String request = '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
-  Response response = await Dio().get(request);
+      String request = '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
+      Response response = await Dio().get(request);
 
-  final data = response.data;
+      final data = response.data;
 
-  if (data == null || !data.containsKey('result')) {
-    return;
-  }
+      if (data == null || !data.containsKey('result')) {
+        return;
+      }
 
-  final location = data['result']['geometry']['location'];
+      final location = data['result']['geometry']['location'];
 
-  if (location == null || location['lat'] == null || location['lng'] == null) {
-    return;
-  }
+      if (location == null || location['lat'] == null || location['lng'] == null) {
+        return;
+      }
 
-  double lat = location['lat'] as double;
-  double lng = location['lng'] as double;
+      double lat = location['lat'] as double;
+      double lng = location['lng'] as double;
 
-  _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
-  addMarker(LatLng(lat, lng));
-  setState(() {
-    _posAdded = true;
-  });
+      _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
+      addMarker(LatLng(lat, lng));
+      setState(() {
+        _posAdded = true;
+      });
 }
 
     return Scaffold(
       body: Stack(children: [
-        buildMap(_animatedMapController, context, _markers, _polylines, _posAdded),
+        buildMap(_animatedMapController, context, _markers, _polylines, _posAdded, _alignPositionStreamController, _alignPositionOnUpdate),
         FloatingSearchBar(
           controller: _controller,
           hint: 'Search...',
@@ -362,7 +406,29 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
               );
             }
           },
-        )
+        ),
+        Align(
+          alignment: Alignment.bottomRight,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: FloatingActionButton(
+              backgroundColor: theme.colorScheme.primary,
+              onPressed: () {
+                // Align the location marker to the center of the map widget
+                // on location update until user interact with the map.
+                setState(
+                  () => _alignPositionOnUpdate = AlignOnUpdate.always,
+                );
+                // Align the location marker to the center of the map widget
+                // and zoom the map to level 18.
+                _alignPositionStreamController.add(16);
+              },
+              child: Icon(
+                Icons.my_location,
+                color: theme.colorScheme.onPrimary,
+              ),
+            ),
+          )),
       ]),
     );
   }
