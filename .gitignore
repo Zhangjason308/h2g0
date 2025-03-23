@@ -53,8 +53,8 @@ flutter/android/app/profile/
 flutter/android/app/release/
 
 # === 📌 Backend (Node.js) ===
-/backend/node_modules  # Ignore Node.js dependencies
-backend/.env           # Ignore backend environment variables
+/backend/node_modules  
+backend/.env          
 
 # === 📌 Firebase / Credentials (Flutter) ===
 flutter/*.p8
