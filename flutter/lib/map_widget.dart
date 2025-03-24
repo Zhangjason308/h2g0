@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:h2g0/models/marker_state.dart';
 import 'package:h2g0/models/place.dart';
 import 'package:latlong2/latlong.dart';
@@ -29,7 +30,7 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
-Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, List<Polyline> polylines, bool posAdded, StreamController<double?> alignposstream, AlignOnUpdate alignonupdate) {
+Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<Marker> markers, List<Polyline> polylines, bool posAdded, MarkerState? selectedMarker, StreamController<double?> alignposstream, AlignOnUpdate alignonupdate) {
   
   return FlutterMap(
     mapController: mapcontroller.mapController,
@@ -84,7 +85,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final List<Marker> _markers = [];
   final List<Polyline> _polylines = [];
   bool _posAdded = false;
-  MarkerState? selectedMarker;
+  MarkerState? _selectedMarker;
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -105,10 +106,11 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    selectedMarker = null;
     _alignPositionOnUpdate = AlignOnUpdate.always;
     _alignPositionStreamController = StreamController<double?>();
+
     setState(() {
+      _selectedMarker = null;
       _markers.clear();
       int mark = 0;
       for (var location in widget.washroomLocations) {
@@ -145,9 +147,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   void selectedAMarker(Marker marker) {
     MarkerState mark = marker as MarkerState;
     print("${mark.name} at ${mark.point}");
-    MarkerState? previousMarker = selectedMarker;
-
-    selectedMarker = mark;
+    MarkerState? previousMarker = _selectedMarker;
 
     MarkerState updatedMarker = MarkerState(
       width: 40,
@@ -162,6 +162,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       listPos: mark.listPos);
 
       setState(() {
+        _selectedMarker = mark;
         _markers[mark.listPos] = updatedMarker;
         if (previousMarker != null) {
           MarkerState returnMarker = MarkerState(
@@ -185,6 +186,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           _markers[previousMarker.listPos] = returnMarker;
         }
       });
+      getDirections(LatLng(45.27856781358763, -75.71089782883634), marker.point);
+
   }
 
   void getDirections(LatLng source, LatLng destination) async {
@@ -195,6 +198,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
       String request = '$baseURL?profile=foot&point=$sourcePos&point=$destinationPos&locale=en&points_encoded=false&key=$key';
       Response response = await Dio().get(request);
+      print(request);
       List<dynamic> points = response.data['paths'][0]['points']['coordinates'];
       List<LatLng> coords = [];
       for (dynamic cord in points) {
@@ -241,7 +245,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         MediaQuery.of(context).orientation == Orientation.portrait;
     String? selectedID;
     String? apiKey = widget.placesAPIKey;
-
+    
     void addMarker(LatLng coordinates) {
       if (_posAdded) {
         setState(() {
@@ -330,7 +334,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
     return Scaffold(
       body: Stack(children: [
-        buildMap(_animatedMapController, context, _markers, _polylines, _posAdded, _alignPositionStreamController, _alignPositionOnUpdate),
+        buildMap(_animatedMapController, context, _markers, _polylines, _posAdded, _selectedMarker, _alignPositionStreamController, _alignPositionOnUpdate),
         FloatingSearchBar(
           controller: _controller,
           hint: 'Search...',
