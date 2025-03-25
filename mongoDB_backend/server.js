@@ -1,6 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import { MongoClient } from 'mongodb';
+import axios from 'axios';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -40,9 +45,37 @@ app.get('/locations', async (req, res) => {
     }
   });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
+  });
+
+  app.get('/autocomplete', async (req, res) => {
+    const input = req.query.input;
+    const apiKey = process.env.PLACES_API_KEY;
+  
+    if (!input || !apiKey) {
+      return res.status(400).send('Missing input or API key');
+    }
+  
+    try {
+      const response = await axios.get('https://maps.googleapis.com/maps/api/place/autocomplete/json', {
+        params: {
+          input,
+          key: apiKey,
+          type: 'geocode',
+          location: '45.424721,-75.695000',
+          radius: 5000,
+        }
+      });
+  
+      res.json(response.data);
+    } catch (err) {
+      console.error('Autocomplete error:', err.message);
+      res.status(500).send('Autocomplete failed');
+    }
+  });
+  
+  
 
 // implement function to validate the returned data type to match this
 const Washroom_Location = {

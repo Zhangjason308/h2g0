@@ -232,34 +232,32 @@ void initState() {
     
 
     void getResults(String input) async {
-      String baseURL =
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json';
-      String type = 'geocode';
-      String location = '45.424721 -75.695000';
-      String radius = '5000';
-      //TODO Add session token
+  String request = 'http://172.17.100.127:5001/autocomplete?input=$input'; // replace with your IP
 
-      String request =
-          '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
+  try {
+    final response = await Dio().get(request);
+    print("Backend proxy response: ${response.data}");
 
-      Response response = await Dio().get(request);
+    final predictions = response.data['predictions'];
 
-      final predictions = response.data['predictions'];
+    List<Place> displayResults = [];
 
-      List<Place> displayResults = [];
-
-      for (var i = 0; i < predictions.length; i++) {
-        String address = predictions[i]['description'];
-        String placeid = predictions[i]['place_id'];
-        if (!address.contains("NOT")) {
-          displayResults.add(Place(address, placeid));
-        }
+    for (var i = 0; i < predictions.length; i++) {
+      String address = predictions[i]['description'];
+      String placeid = predictions[i]['place_id'];
+      if (!address.contains("NOT")) {
+        displayResults.add(Place(address, placeid));
       }
-
-      setState(() {
-        placesList = displayResults;
-      });
     }
+
+    setState(() {
+      placesList = displayResults;
+    });
+  } catch (e) {
+    print("Error fetching autocomplete: $e");
+  }
+}
+
 
     void getLatLng(String placeId, String address) async {
   if (placeId.isEmpty) {
