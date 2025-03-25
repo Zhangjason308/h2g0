@@ -113,8 +113,8 @@ void initState() {
     _markers.clear();
     
     for (var location in widget.washroomLocations) {
-      double lat = double.parse(location['Y_COORDINATE']) ?? 0.0; 
-      double lng = double.parse(location['X_COORDINATE']) ?? 0.0; 
+      double lat = double.parse(location['Y_COORDINATE']); 
+      double lng = double.parse(location['X_COORDINATE']); 
 
       _markers.add(
         Marker(
