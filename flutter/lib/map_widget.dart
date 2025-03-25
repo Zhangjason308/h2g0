@@ -114,8 +114,9 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       _markers.clear();
       int mark = 0;
       for (var location in widget.washroomLocations) {
-        double lat = (location['Y_COORDINATE'] ?? 0.0) as double; 
-        double lng = (location['X_COORDINATE'] ?? 0.0) as double;
+        print("made it here?");
+        double lat = double.parse(location['Y_COORDINATE']) ?? 0.0; 
+        double lng = double.parse(location['X_COORDINATE']) ?? 0.0;
         String name =  (location['NAME']) as String;
         int position = mark;
 
@@ -198,7 +199,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
       String request = '$baseURL?profile=foot&point=$sourcePos&point=$destinationPos&locale=en&points_encoded=false&key=$key';
       Response response = await Dio().get(request);
-      print(request);
       List<dynamic> points = response.data['paths'][0]['points']['coordinates'];
       List<LatLng> coords = [];
       for (dynamic cord in points) {

@@ -8,10 +8,4 @@ class MarkerState extends Marker {
 
   MarkerState({super.key, required super.point, required super.child, required this.name, required this.listPos, super.width, super.height});
 
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
-  }
-
 }
