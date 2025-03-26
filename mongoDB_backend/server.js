@@ -1,19 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import { MongoClient } from 'mongodb';
-import axios from 'axios';
-import * as dotenv from 'dotenv';
-dotenv.config();
-
-
 
 const app = express();
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
-const client = new MongoClient('mongodb+srv://ADMIN_ACCESS:BCICTWLRWDUETWHNJGB3ATBIWTAPBO1@cluster0.3qhwi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
+const client = new MongoClient('mongodb+srv://tritoncrowley:6z32XmSnC6xqqrJ6@cluster0.3qhwi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 
 async function connectToDatabase() {
     try {
@@ -45,37 +40,9 @@ app.get('/locations', async (req, res) => {
     }
   });
 
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port ${port}`);
-  });
-
-  app.get('/autocomplete', async (req, res) => {
-    const input = req.query.input;
-    const apiKey = process.env.PLACES_API_KEY;
-  
-    if (!input || !apiKey) {
-      return res.status(400).send('Missing input or API key');
-    }
-  
-    try {
-      const response = await axios.get('https://maps.googleapis.com/maps/api/place/autocomplete/json', {
-        params: {
-          input,
-          key: apiKey,
-          type: 'geocode',
-          location: '45.424721,-75.695000',
-          radius: 5000,
-        }
-      });
-  
-      res.json(response.data);
-    } catch (err) {
-      console.error('Autocomplete error:', err.message);
-      res.status(500).send('Autocomplete failed');
-    }
-  });
-  
-  
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
 
 // implement function to validate the returned data type to match this
 const Washroom_Location = {

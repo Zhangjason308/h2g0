@@ -51,7 +51,7 @@ class MyHomePage extends StatelessWidget {
     try {
       //final response = await http.get(Uri.parse('$apiUrl/locations'));
       final response =
-          await http.get(Uri.parse('http://172.17.100.127:5001/locations'));
+          await http.get(Uri.parse('http://localhost:5000/locations'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data;
@@ -59,6 +59,7 @@ class MyHomePage extends StatelessWidget {
         throw Exception('Failed to load data - 1');
       }
     } catch (error) {
+      print('Error fetching data: $error');
       throw Exception('Failed to load data - 2');
     }
   }
@@ -80,15 +81,14 @@ class MyHomePage extends StatelessWidget {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             final washroomLocations = snapshot.data!['washroomLocations'];
-            //final waterFountainLocations = snapshot.data!['fountainLocations'];
+            final waterFountainLocations = snapshot.data!['fountainLocations'];
 
             // Return the MapWidget with fetched data
             return MapWidget(
               placesAPIKey: apikey, // Pass the API key to MapWidget
               washroomLocations: washroomLocations,
-              //waterFountainLocations: waterFountainLocations,
+              waterFountainLocations: waterFountainLocations,
             );
-            
           } else {
             // If no data available, show a fallback message
             return Center(child: Text('No data available'));
