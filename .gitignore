@@ -80,3 +80,5 @@ flutter/.flutter-plugins-dependencies
 flutter/.flutter-plugins
 flutter/.flutter-plugins-dependencies
 flutter/android/local.properties
+
+backend/.env

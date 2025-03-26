@@ -8,8 +8,7 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-const client = new MongoClient('mongodb+srv://tritoncrowley:6z32XmSnC6xqqrJ6@cluster0.3qhwi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
-
+const client = new MongoClient('mongodb+srv://ADMIN_ACCESS:BCICTWLRWDUETWHNJGB3ATBIWTAPBO1@cluster0.3qhwi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 async function connectToDatabase() {
     try {
         await client.connect();

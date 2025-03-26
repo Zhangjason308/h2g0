@@ -51,7 +51,7 @@ class MyHomePage extends StatelessWidget {
     try {
       //final response = await http.get(Uri.parse('$apiUrl/locations'));
       final response =
-          await http.get(Uri.parse('http://localhost:5000/locations'));
+          await http.get(Uri.parse('http://localhost:5001/locations'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data;
