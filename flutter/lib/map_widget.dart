@@ -103,6 +103,59 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     super.dispose();
   }
 
+@override
+void initState() {
+  super.initState();
+
+  setState(() {
+    _markers.clear();
+    
+    for (var location in widget.washroomLocations) {
+
+      double lat = double.tryParse(location['Y_COORDINATE'].toString()) ?? 0.0;
+      double lng = double.tryParse(location['X_COORDINATE'].toString()) ?? 0.0;
+
+
+
+      _markers.add(
+        Marker(
+          width: 40,
+          height: 40,
+          point: LatLng(lat, lng),
+          child: const Icon(
+            Icons.wc, // Washroom icon
+            color: Colors.blue,
+            size: 40,
+          ),
+        ),
+      );
+    }
+ 
+  });
+}
+
+  // Loop through each water fountain location and create a marker
+  // for (var location in widget.waterFountainLocations) {
+  //   double lat = location['lat'];
+  //   double lng = location['lng'];
+
+  //   _markers.add(
+  //     Marker(
+  //       width: 40,
+  //       height: 40,
+  //       point: LatLng(lat, lng),
+  //       child: const Icon(
+  //         Icons.local_drink, // Water fountain icon
+  //         color: Colors.green,
+  //         size: 40,
+  //       ),
+  //     ),
+  //   );
+  // }
+  // });
+
+
+
   @override
   Widget build(BuildContext context) {
     final isPortrait =

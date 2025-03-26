@@ -26,6 +26,12 @@ jobs:
         with:
           flutter-version: "3.x"
 
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses
+
       - name: Install Dependencies
         run: flutter pub get
 
@@ -47,4 +53,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: flutter/build/app/outputs/flutter-apk/app-release.apk
