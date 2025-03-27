@@ -83,3 +83,5 @@ flutter/.flutter-plugins-dependencies
 flutter/android/local.properties
 
 backend/.env
+
+linux/flutter/generated_plugin_registrant.h
