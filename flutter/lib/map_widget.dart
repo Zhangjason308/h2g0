@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:h2g0/models/place.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:h2g0/models/marker_state.dart';
 import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,12 +15,14 @@ import 'bottom_bar.dart';
 
 class MapWidget extends StatefulWidget {
   final String? placesAPIKey;
+  final String? graphapikey;
   final List washroomLocations;
   final List waterFountainLocations;
 
   const MapWidget({
     super.key,
     required this.placesAPIKey,
+    required this.graphapikey,
     required this.washroomLocations,
     required this.waterFountainLocations,
   });
@@ -30,7 +35,11 @@ Widget buildMap(
   AnimatedMapController mapcontroller,
   BuildContext context,
   List<Marker> markers,
+  List<Polyline> polylines,
   bool posAdded,
+  MarkerState? selectedMarker, 
+  StreamController<double?> alignposstream, 
+  AlignOnUpdate alignonupdate,
   Function(Map<String, dynamic>) onPinTap,
   Map<LatLng, Map<String, dynamic>> markerMetadata,
 ) {
@@ -48,30 +57,17 @@ Widget buildMap(
         userAgentPackageName: 'com.h2g0.app',
         tileProvider: CancellableNetworkTileProvider(),
       ),
-      MarkerLayer(markers: markers),
+      MarkerLayer(
+        markers: markers
+      ),
+      PolylineLayer(
+        polylines: polylines,
+      ),
       CurrentLocationLayer(
-        alignPositionOnUpdate: AlignOnUpdate.always,
-        alignDirectionOnUpdate: AlignOnUpdate.never,
+        alignPositionStream: alignposstream.stream,
+        alignPositionOnUpdate: alignonupdate,
       ),
-      Align(
-        alignment: Alignment.bottomRight,
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: FloatingActionButton(
-            backgroundColor: theme.colorScheme.primary,
-            onPressed: () {
-              mapcontroller.centerOnPoint(
-                LatLng(45.424721, -75.695000),
-                zoom: 16,
-              );
-            },
-            child: Icon(
-              Icons.my_location,
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-        ),
-      ),
+      
       RichAttributionWidget(
         alignment: AttributionAlignment.bottomLeft,
         attributions: [
@@ -87,11 +83,16 @@ Widget buildMap(
   );
 }
 
+enum SelectedFacilitiy {WASHROOM, FOUNTAIN}
+
 class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final _controller = FloatingSearchBarController();
   final DraggableScrollableController _bottomSheetController = DraggableScrollableController();
   final Map<LatLng, Map<String, dynamic>> _markerMetadata = {};
   final List<Marker> _markers = [];
+  final List<Polyline> _polylines = [];
+  late AlignOnUpdate _alignPositionOnUpdate;
+  late final StreamController<double?> _alignPositionStreamController;
 
   List<Place> placesList = [];
   Map<String, dynamic> _selectedMetadata = {
@@ -101,6 +102,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
   bool _isBottomSheetVisible = false;
   bool _posAdded = false;
+  MarkerState? _selectedMarker;
+  List<Marker> _filteredmarkers = [];
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -124,6 +127,66 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
+  void selectedAMarker(Marker marker) {
+    MarkerState mark = marker as MarkerState;
+    int index = _filteredmarkers.indexOf(marker);
+    print("${mark.metadata['name']} of type ${mark.facilityType}");
+    MarkerState? previousMarker = _selectedMarker;
+
+    MarkerState updatedMarker = MarkerState(
+      width: 40,
+      height: 40,
+      facilityType: mark.facilityType,
+      point: mark.point, 
+      child: (mark.facilityType == Type.WASHROOM)
+        ? const Icon(
+        Icons.wc, // Washroom icon
+        color: Colors.red,
+        size: 40)
+        : const Icon(
+        Icons.water_drop, // Fountain icon
+        color: Colors.red,
+        size: 40,
+      ), 
+      metadata: mark.metadata, 
+      listPos: index);
+
+    setState(() {
+      _selectedMarker = mark;
+      _filteredmarkers[updatedMarker.listPos] = updatedMarker;
+      if (previousMarker != null) {
+        print(previousMarker.facilityType);
+        MarkerState returnMarker = MarkerState(
+          width: 40,
+          height: 40,
+          facilityType: previousMarker.facilityType,
+          metadata: previousMarker.metadata,
+          listPos: previousMarker.listPos,
+          point: previousMarker.point,
+          child: GestureDetector(
+            onTap: () {
+              selectedAMarker(_filteredmarkers[previousMarker.listPos]);
+            },
+            child: (previousMarker.facilityType == Type.WASHROOM)
+              ? const Icon(
+              Icons.wc, // Washroom icon
+              color: Colors.blue,
+              size: 40)
+              : const Icon(
+              Icons.water_drop, // Fountain icon
+              color: Colors.blue,
+              size: 40,
+            ), 
+          )
+        );
+
+        _filteredmarkers[previousMarker.listPos] = returnMarker;
+      }
+    });
+      //getDirections(LatLng(45.27856781358763, -75.71089782883634), marker.point);
+    _handlePinTap(mark.metadata);
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -134,17 +197,23 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _markers.clear();
+    _alignPositionOnUpdate = AlignOnUpdate.always;
+    _alignPositionStreamController = StreamController<double?>();
 
+    _markers.clear();
+    _filteredmarkers.clear();
+    int mark = 0;
     for (var location in widget.washroomLocations) {
       double lat = double.tryParse(location['Y_COORDINATE'].toString()) ?? 0.0;
       double lng = double.tryParse(location['X_COORDINATE'].toString()) ?? 0.0;
+      int listposition = mark;
 
       LatLng position = LatLng(lat, lng);
       Map<String, dynamic> metadata = {
         'name': location['NAME'],
         'address': location['ADDRESS'],
         'telephone': location['REPORT_TELEPHONE'],
+        'accessibility': location['ACCESSIBILITY'],
         'hours monday open': location['HOURS_MONDAY_OPEN'],
         'hours tuesday open': location['HOURS_TUESDAY_OPEN'],
         'hours wednesday open': location['HOURS_WEDNESDAY_OPEN'],
@@ -157,12 +226,15 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       _markerMetadata[position] = metadata;
 
       _markers.add(
-        Marker(
+        MarkerState(
           width: 40,
           height: 40,
+          listPos: listposition,
+          metadata: metadata,
+          facilityType: Type.WASHROOM,
           point: position,
           child: GestureDetector(
-            onTap: () => _handlePinTap(_markerMetadata[position]!),
+            onTap: () => selectedAMarker(_filteredmarkers[listposition]),
             child: const Icon(
               Icons.wc,
               color: Colors.blue,
@@ -171,18 +243,58 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           ),
         ),
       );
+      mark ++;
     }
+
+    for (var location in widget.waterFountainLocations) {
+      double lat = double.tryParse(location['Y_COORDINATE'].toString()) ?? 0.0;
+      double lng = double.tryParse(location['X_COORDINATE'].toString()) ?? 0.0;
+      int listposition = mark;
+
+      LatLng position = LatLng(lat, lng);
+      Map<String, dynamic> metadata = {
+        'name': location['BUILDING_NAME'],
+        'address': location['ADDRESS'],
+        'hours': location['HOURS_OF_OPERATION'],
+        'inout': location['INSIDE_OUTSIDE'],
+        'yearround': location['OPEN_YEAR_ROUND']
+      };
+
+      _markerMetadata[position] = metadata;
+
+      _markers.add(
+        MarkerState(
+          width: 40,
+          height: 40,
+          listPos: listposition,
+          metadata: metadata,
+          facilityType: Type.WASHROOM,
+          point: position,
+          child: GestureDetector(
+            onTap: () => selectedAMarker(_filteredmarkers[listposition]),
+            child: const Icon(
+              Icons.wc,
+              color: Colors.blue,
+              size: 40,
+            ),
+          ),
+        ),
+      );
+      mark ++;
+    }
+    _filteredmarkers = List<Marker>.from(_markers);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     String? selectedID;
     String? apiKey = widget.placesAPIKey;
 
     void addMarker(LatLng coordinates) {
       if (_posAdded) {
-        _markers.removeLast();
+        _filteredmarkers.removeLast();
       }
 
       _markerMetadata[coordinates] = {
@@ -190,7 +302,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         'address': 'Searched Address'
       };
 
-      _markers.add(
+      _filteredmarkers.add(
         Marker(
           width: 40,
           height: 40,
@@ -209,17 +321,56 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       setState(() => _posAdded = true);
     }
 
-    void getResults(String input) async {
-      String baseURL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
-      String type = 'geocode';
-      String location = '45.424721 -75.695000';
-      String radius = '5000';
+    void getDirections(LatLng source, LatLng destination) async {
+      String baseURL = "https://graphhopper.com/api/1/route";
+      String sourcePos = "${source.latitude},${source.longitude}";
+      String destinationPos = "${destination.latitude},${destination.longitude}";
+      String? key = widget.graphapikey;
 
-      String request = '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
+      String request = '$baseURL?profile=foot&point=$sourcePos&point=$destinationPos&locale=en&points_encoded=false&key=$key';
       Response response = await Dio().get(request);
+      List<dynamic> points = response.data['paths'][0]['points']['coordinates'];
+      List<LatLng> coords = [];
+      for (dynamic cord in points) {
+        coords.add(LatLng(cord[1], cord[0]));
+      }
+      setState(() {
+        _polylines.clear();
 
+        _polylines.add(
+          Polyline(
+            points: coords,
+            color: Colors.red,
+            strokeWidth: 5.0
+          )
+        );
+      });
+    }
+
+    void getResults(String input) async {
+      String baseURL =
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+      String type = 'geocode';
+      String location = '45.424721\%2C-75.695000';
+      String radius = '50000';
+      input = input.replaceAll(" ", "\%2C");
+      //TODO Add session token
+
+      String request =
+          '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius&strictbounds=true';
+
+      Response response = await Dio().get(request);
       final predictions = response.data['predictions'];
-      List<Place> displayResults = predictions.map<Place>((p) => Place(p['description'], p['place_id'])).toList();
+
+      List<Place> displayResults = [];
+
+      for (var i = 0; i < predictions.length; i++) {
+        String address = predictions[i]['description'];
+        String placeid = predictions[i]['place_id'];
+        if (!address.contains("NOT")) {
+          displayResults.add(Place(address, placeid));
+        }
+      }
 
       setState(() {
         placesList = displayResults;
@@ -227,25 +378,45 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
 
     void getLatLng(String placeId, String address) async {
+      if (placeId.isEmpty) {
+        return;
+      }
+
       String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
       String fields = 'geometry';
 
       String request = '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
       Response response = await Dio().get(request);
 
-      final result = response.data['result']['geometry']['location'];
-      double lat = result['lat'] as double;
-      double lng = result['lng'] as double;
+      final data = response.data;
+
+      if (data == null || !data.containsKey('result')) {
+        return;
+      }
+
+      final location = data['result']['geometry']['location'];
+
+      if (location == null || location['lat'] == null || location['lng'] == null) {
+        return;
+      }
+
+      double lat = location['lat'] as double;
+      double lng = location['lng'] as double;
 
       _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
       addMarker(LatLng(lat, lng));
-    }
+      setState(() {
+        _posAdded = true;
+      });
+}
 
     return Scaffold(
       body: Stack(
         children: [
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
+              print("tapped!");
               if (_isBottomSheetVisible) {
                 _bottomSheetController.animateTo(0.0,
                     duration: Duration(milliseconds: 300),
@@ -253,7 +424,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 setState(() => _isBottomSheetVisible = false);
               }
             },
-            child: buildMap(_animatedMapController, context, _markers, _posAdded, _handlePinTap, _markerMetadata),
+            child: buildMap(_animatedMapController, context, _filteredmarkers, _polylines, _posAdded, _selectedMarker, _alignPositionStreamController, _alignPositionOnUpdate, _handlePinTap, _markerMetadata),
           ),
 
           if (_isBottomSheetVisible)
@@ -335,6 +506,29 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 ),
               );
             },
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: FloatingActionButton(
+                backgroundColor: theme.colorScheme.primary,
+                onPressed: () {
+                // Align the location marker to the center of the map widget
+                // on location update until user interact with the map.
+                setState(
+                  () => _alignPositionOnUpdate = AlignOnUpdate.always,
+                );
+                // Align the location marker to the center of the map widget
+                // and zoom the map to level 18.
+                _alignPositionStreamController.add(16);
+              },
+                child: Icon(
+                  Icons.my_location,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
+            ),
           ),
         ],
       ),

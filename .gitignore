@@ -66,6 +66,7 @@ flutter/assets/.env
 
 # === 📌 Generated Plugin Files (Flutter) ===
 flutter/linux/flutter/generated_plugin_registrant.cc
+flutter/linux/flutter/generated_plugin_registrant.h
 flutter/linux/flutter/generated_plugins.cmake
 flutter/macos/Flutter/GeneratedPluginRegistrant.swift
 flutter/windows/flutter/generated_plugin_registrant.cc
