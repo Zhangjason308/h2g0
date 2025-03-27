@@ -13,6 +13,7 @@ import 'widgets/contact_widget.dart';
 import 'theme/app_theme.dart';
 
 const String apiKey = String.fromEnvironment('PLACES_API_KEY');
+const String graphapikey = String.fromEnvironment('GRAPHHOPPER_API_KEY');
 String get apiUrl => const String.fromEnvironment('API_URL', defaultValue: 'http://localhost:5001');
 const String _firstLaunchKey = 'is_first_launch';
 
@@ -54,6 +55,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String selectedTab = 'Map';
   bool _showTutorial = false;
+  final String? apikey = dotenv.env['PLACES_API_KEY'];
+  final String? graphapikey = dotenv.env['GRAPHHOPPER_API_KEY'];
+  final String? apiUrl = dotenv.env['API_URL'];
 
   @override
   void initState() {
@@ -74,27 +78,32 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<Map<String, dynamic>> fetchData() async {
-    final String url = apiUrl.startsWith('http') ? apiUrl : 'http://$apiUrl';
-    final Uri uri = Uri.parse('$url/api/locations');
+    //final String url = apiUrl.startsWith('http') ? apiUrl : 'http://$apiUrl';
+    // final Uri uri = Uri.parse('$apiUrl/api/locations');
     try {
-      final response = await http.get(uri);
+      //final response = await http.get(Uri.parse('$apiUrl/locations'));
+      final response =
+          await http.get(Uri.parse(apiUrl!));
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = json.decode(response.body);
+        return data;
       } else {
-        throw Exception('Failed to load data: ${response.statusCode}');
+        throw Exception('Failed to load data - 1');
       }
-    } catch (e) {
-      throw Exception('Failed to connect to server: $e');
+    } catch (error) {
+      print('Error fetching data: $error');
+      throw Exception('Failed to load data - 2');
     }
   }
 
-  Widget _buildBody(String tab, List washroomLocations) {
+  Widget _buildBody(String tab, List washroomLocations, List waterFountainLocations) {
     switch (tab) {
       case 'Map':
         return MapWidget(
           placesAPIKey: apiKey,
+          graphapikey: graphapikey,
           washroomLocations: washroomLocations,
-          waterFountainLocations: [], // Add empty list for now since we're not using water fountains yet
+          waterFountainLocations: waterFountainLocations, // Add empty list for now since we're not using water fountains yet
         );
       case 'Tutorial':
         return TutorialWidget(
@@ -151,7 +160,8 @@ class _MyHomePageState extends State<MyHomePage> {
             body = Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             final washroomLocations = snapshot.data!['washroomLocations'];
-            body = _buildBody(selectedTab, washroomLocations);
+            final waterFountainLocations = snapshot.data!['fountainLocations'];
+            body = _buildBody(selectedTab, washroomLocations, waterFountainLocations);
           } else {
             body = const Center(child: Text('No data available'));
           }

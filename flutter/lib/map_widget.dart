@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -87,6 +88,7 @@ Widget buildMap(
 }
 
 enum SelectedFacilitiy {WASHROOM, FOUNTAIN}
+enum FountainLocation {INSIDE, OUTSIDE, EITHER}
 
 class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final _controller = FloatingSearchBarController();
@@ -107,7 +109,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   bool _posAdded = false;
   MarkerState? _selectedMarker;
   List<Marker> _filteredmarkers = [];
-  List<dynamic> filters = [false, false, false, false, false, false, 0];
+  List<dynamic> filters = [false, false, false, 0.0, FountainLocation.EITHER, false, 0.0];
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -175,7 +177,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       _markers.add(
         MarkerState(
           width: 40,
-          height: 40,
+          height:40,
           listPos: listposition,
           metadata: metadata,
           facilityType: Type.WASHROOM,
@@ -185,7 +187,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
             child: Image.asset(
               'assets/images/ToiletIcon_final.png',
               width: 40,
-              height: 54,
+              height: 40,
               color: Colors.blue,
               alignment: FractionalOffset(0, 27),
             ),
@@ -224,7 +226,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
             child: Image.asset(
               'assets/images/FountainIcon_final.png',
               width: 40,
-              height: 54,
+              height: 40,
               color: Colors.blue,
               alignment: FractionalOffset(0, 27),
             ),
@@ -248,21 +250,23 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       height: 40,
       facilityType: mark.facilityType,
       point: mark.point, 
-      child: (mark.facilityType == Type.WASHROOM)
+      child: GestureDetector(
+        onTap: () => selectedAMarker(_filteredmarkers[mark.listPos]),
+        child: (mark.facilityType == Type.WASHROOM)
         ? Image.asset(
               'assets/images/ToiletIcon_final.png',
               width: 40,
-              height: 54,
+              height: 40,
               color: Colors.red,
               alignment: FractionalOffset(0, 27),
             )
         : Image.asset(
               'assets/images/FountainIcon_final.png',
               width: 40,
-              height: 54,
+              height: 40,
               color: Colors.red,
               alignment: FractionalOffset(0, 27),
-            ), 
+            )), 
       metadata: mark.metadata, 
       listPos: index);
 
@@ -286,14 +290,14 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
               ? Image.asset(
                 'assets/images/ToiletIcon_final.png',
                 width: 40,
-                height: 54,
+                height: 40,
                 color: Colors.blue,
                 alignment: FractionalOffset(0, 27),
               )
               : Image.asset(
                 'assets/images/FountainIcon_final.png',
                 width: 40,
-                height: 54,
+                height: 40,
                 color: Colors.blue,
                 alignment: FractionalOffset(0, 27),
               ),
@@ -325,14 +329,14 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
               ? Image.asset(
                 'assets/images/ToiletIcon_final.png',
                 width: 40,
-                height: 54,
+                height: 40,
                 color: Colors.blue,
                 alignment: FractionalOffset(0, 27),
               )
               : Image.asset(
                 'assets/images/FountainIcon_final.png',
                 width: 40,
-                height: 54,
+                height: 40,
                 color: Colors.blue,
                 alignment: FractionalOffset(0, 27),
               ),
@@ -490,7 +494,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 child: Image.asset(
                   'assets/images/ToiletIcon_final.png',
                   width: 40,
-                  height: 54,
+                  height: 40,
                   color: Colors.blue,
                   alignment: FractionalOffset(0, 27),
                 )
@@ -525,7 +529,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 child: Image.asset(
                   'assets/images/FountainIcon_final.png',
                   width: 40,
-                  height: 54,
+                  height: 40,
                   color: Colors.blue,
                   alignment: FractionalOffset(0, 27),
                 )
@@ -538,25 +542,97 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     );
   }
 
+  double getDistance(LatLng point1, LatLng point2)
+  {
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a = 0.5 - c((point2.latitude - point1.latitude) * p)/2 +
+        c(point1.latitude * p) * c(point2.latitude * p) *
+            (1 - c((point2.longitude - point1.longitude) * p))/2;
+    var radiusOfEarth = 6371;
+    return radiusOfEarth * 2 * asin(sqrt(a)) * 1000;
+  }
+
   void applyFilters(SelectedFacilitiy? facilityType) async {
-    if (facilityType == SelectedFacilitiy.WASHROOM)
-    {
-      viewWashrooms();
-      if (filters[0]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['changestationchild'] == "1").toList();
-      if (filters[2]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['changestationadult'] == "1").toList();
-      if (filters[3]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['familytoilet'] == "1").toList();
-    }
-    else if (facilityType == SelectedFacilitiy.FOUNTAIN) {
-
-    }
-
     //Distance
     bool isLocationEnabled = await Geolocator.isLocationServiceEnabled();
+    LatLng? position;
+    if (isLocationEnabled) {
+      position = await getLocation();
+    }
 
-    getLocation().then((value) {
-      if (filters[6] != 0 && isLocationEnabled) _filteredmarkers = _filteredmarkers.where((marker) => (distance(value, (marker as MarkerState).point) <= filters[6]*1000)).toList();
-    });
+    if (facilityType == SelectedFacilitiy.WASHROOM) viewWashrooms();
+    else if (facilityType == SelectedFacilitiy.FOUNTAIN) viewFountains();
     
+    setState(() {
+    if (facilityType == SelectedFacilitiy.WASHROOM)
+    {
+      if (filters[0]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['changestationchild'] == "1").toList();
+      if (filters[1]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['changestationadult'] == "1").toList();
+      if (filters[2]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['familytoilet'] == "1").toList();
+      if (filters[3] > 0) {
+        _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['accessibility'] >= filters[3]).toList();
+      }
+    }
+    else if (facilityType == SelectedFacilitiy.FOUNTAIN) {
+      print(filters[4].toString().substring(17));
+      if (filters[4] != FountainLocation.EITHER) {
+        _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['inout'].toString().toUpperCase() == filters[4].toString().substring(17)).toList();
+      }
+      if (filters[5]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['yearround'] == "Yes").toList();
+    }
+
+    if (filters[6] != 0 && isLocationEnabled && position != null) {
+        _filteredmarkers = _filteredmarkers.where((marker) => (getDistance(position!, (marker as MarkerState).point) <= filters[6]*1000)).toList();
+        print(_filteredmarkers.length);
+      };
+    });
+
+    setState(() {
+      for (int i = 0; i < _filteredmarkers.length; i++) {
+      int pos = i;
+      _filteredmarkers[i] = MarkerState(
+        width: 40,
+        height: 40,
+        point: _filteredmarkers[i].point, 
+        child: GestureDetector(
+              onTap: () {
+                selectedAMarker(_filteredmarkers[pos]);
+              },
+              child: ((_filteredmarkers[i] as MarkerState).facilityType == Type.WASHROOM)
+                ? Image.asset(
+                  'assets/images/ToiletIcon_final.png',
+                  width: 40,
+                  height: 40,
+                  color: Colors.blue,
+                  alignment: FractionalOffset(0, 27),
+                )
+                : Image.asset(
+                  'assets/images/FountainIcon_final.png',
+                  width: 40,
+                  height: 40,
+                  color: Colors.blue,
+                  alignment: FractionalOffset(0, 27),
+                ),
+            ), 
+        metadata: (_filteredmarkers[i] as MarkerState).metadata, 
+        listPos: pos, 
+        facilityType: (_filteredmarkers[i] as MarkerState).facilityType);
+        
+    }
+    });
+  }
+
+  void clearFilters(SelectedFacilitiy? facilityType) {
+    if (facilityType == SelectedFacilitiy.WASHROOM) {
+      viewWashrooms();
+    } else {
+      viewFountains();
+    }
+
+    setState(() {
+      filters = [false, false, false, 0.0, FountainLocation.EITHER, false, 0.0];
+    });
   }
 
   void closeBottomSheet() {
@@ -576,14 +652,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   {
   }
 
-  double distance(LatLng point1, LatLng point2)
-  {
-    double dist(FlutterMapMath l) => l.distanceBetween(point1.latitude, point1.longitude, point2.latitude, point2.longitude, "meters");
-    return dist as double;
-  }
-
   SelectedFacilitiy? facility = SelectedFacilitiy.WASHROOM;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -648,9 +717,53 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     ),
                     if (facility == SelectedFacilitiy.WASHROOM) CheckboxListTile(value: filters[0], onChanged: (bool? value) {setState((){filters[0] = value!;});}, title: Text('Child Change Station')),
                     if (facility == SelectedFacilitiy.WASHROOM) CheckboxListTile(value: filters[1], onChanged: (bool? value) {setState((){filters[1] = value!;});}, title: Text('Adult Change Station')),
-                    if (facility == SelectedFacilitiy.WASHROOM) CheckboxListTile(value: filters[2], onChanged: (bool? value) {setState((){filters[2] = value!;});}, title: Text('Family R')),
-                    //if (_facility == SelectedFacilitiy.WASHROOM) CheckboxListTile(value: filters[3], onChanged: (bool? value) {filters[3] = value!;}),
-                    if (facility == SelectedFacilitiy.FOUNTAIN) CheckboxListTile(value: filters[4], onChanged: (bool? value) {setState((){filters[4] = value!;});}, title: Text('Inside')),
+                    if (facility == SelectedFacilitiy.WASHROOM) CheckboxListTile(value: filters[2], onChanged: (bool? value) {setState((){filters[2] = value!;});}, title: Text('Family Toilet')),
+                    if (facility == SelectedFacilitiy.WASHROOM) Divider(),
+                    if (facility == SelectedFacilitiy.WASHROOM) Padding(
+                                                                  padding: const EdgeInsets.all(8.0),
+                                                                  child: Text("Accessibility Level"),
+                                                                ),
+                    if (facility == SelectedFacilitiy.WASHROOM) Slider(
+                                                                  value: filters[3],
+                                                                  max: 3,
+                                                                  divisions: 3,
+                                                                  label: filters[3].round().toString(),
+                                                                  onChanged: (double value) {
+                                                                    setState(() {
+                                                                      filters[3] = value;
+                                                                    });
+                                                                  },
+                                                                ),
+                    if (facility == SelectedFacilitiy.FOUNTAIN) RadioListTile<FountainLocation>(
+                                                                  title: const Text('Inside'),
+                                                                  value: FountainLocation.INSIDE,
+                                                                  groupValue: filters[4],
+                                                                  onChanged: (FountainLocation? value) {
+                                                                    setState(() {
+                                                                      filters[4] = value;
+                                                                    });
+                                                                  },
+                                                                ),
+                    if (facility == SelectedFacilitiy.FOUNTAIN) RadioListTile<FountainLocation>(
+                                                                  title: const Text('Outside'),
+                                                                  value: FountainLocation.OUTSIDE,
+                                                                  groupValue: filters[4],
+                                                                  onChanged: (FountainLocation? value) {
+                                                                    setState(() {
+                                                                      filters[4] = value;
+                                                                    });
+                                                                  },
+                                                                ),
+                    if (facility == SelectedFacilitiy.FOUNTAIN) RadioListTile<FountainLocation>(
+                                                                  title: const Text('Either'),
+                                                                  value: FountainLocation.EITHER,
+                                                                  groupValue: filters[4],
+                                                                  onChanged: (FountainLocation? value) {
+                                                                    setState(() {
+                                                                      filters[4] = value;
+                                                                    });
+                                                                  },
+                                                                ),
                     if (facility == SelectedFacilitiy.FOUNTAIN) CheckboxListTile(value: filters[5], onChanged: (bool? value) {setState((){filters[5] = value!;});}, title: Text('Open Year Round')),
                     Divider(),
                     Padding(
@@ -661,7 +774,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                       value: filters[6],
                       max: 50,
                       divisions: 20,
-                      label: filters[6].round().toString(),
+                      label: filters[6].toStringAsFixed(1),
                       onChanged: (double value) {
                         setState(() {
                           filters[6] = value;
@@ -669,7 +782,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                       },
                     ),
                     Divider(),
-                    ElevatedButton(onPressed: () => print("Apply!"), child: Text("Apply"))
+                    Row(
+                      children: [
+                        ElevatedButton(onPressed: () => clearFilters(facility), child: Text("Clear Filters")),
+                        Spacer(),
+                        ElevatedButton(onPressed: () => applyFilters(facility), child: Text("Apply")),
+                      ],
+                    )
                   ],
                 ),
                 if (kIsWeb) Icon(Icons.directions_walk)
@@ -681,8 +800,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       body: Stack(
         children: [
           GestureDetector(
-            behavior: HitTestBehavior.opaque,
             onTap: () {
+              
               if (_isBottomSheetVisible) {
                 _bottomSheetController.animateTo(0.0,
                     duration: Duration(milliseconds: 300),

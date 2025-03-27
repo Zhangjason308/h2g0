@@ -48,6 +48,7 @@ dependencies:
   geolocator: ^13.0.2
   flutter_dotenv: ^5.2.1
   flutter_map_math: ^0.1.9
+  location: ^5.0.0
 
 dev_dependencies:
   flutter_test:
@@ -65,20 +66,18 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-  assets:
-    - assets/.env
-    - assets/images/FountainIcon_final.png
-    - assets/images/ToiletIcon_final.png
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
   assets:
     - assets/
+    - assets/.env
     - assets/images/
     - assets/images/team.png
-
+    - assets/images/ToiletIcon_final.png
+    - assets/images/FountainIcon_final.png
+    
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
