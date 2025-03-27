@@ -72,7 +72,7 @@ class MyHomePage extends StatelessWidget {
     //return MapWidget(placesAPIKey: apikey);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Washroom Map")),
+      appBar: AppBar(title: const Text("Facilities Map")),
       body: FutureBuilder<Map<String, dynamic>>(
         future: fetchData(),
         builder: (context, snapshot) {

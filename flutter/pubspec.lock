@@ -198,6 +198,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.1.1"
+  flutter_map_math:
+    dependency: "direct main"
+    description:
+      name: flutter_map_math
+      sha256: "213600df9559e8cc3352d41ee5d229d949c28bd691feffaf50d9deaf69339d6d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.9"
   flutter_test:
     dependency: "direct dev"
     description: flutter
