@@ -9,6 +9,8 @@ import 'package:material_floating_search_bar_2/material_floating_search_bar_2.da
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+const String apiUrl = String.fromEnvironment('API_URL');
+
 class MapWidget extends StatefulWidget {
   final String? placesAPIKey;
   final List washroomLocations;
@@ -197,9 +199,13 @@ void initState() {
       //TODO Add session token
 
       String request =
-          '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
+          'http://localhost:5001/api/autocomplete';
 
-      Response response = await Dio().get(request);
+      Response response = await Dio().get(
+        request,
+        queryParameters: {'input': input},
+      );
+
 
       final predictions = response.data['predictions'];
 
@@ -226,8 +232,12 @@ void initState() {
   String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
   String fields = 'geometry';
 
-  String request = '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
-  Response response = await Dio().get(request);
+  String request = 'http://localhost:5001/api/place-details';
+  Response response = await Dio().get(
+  request,
+  queryParameters: {'placeid': placeId},
+);
+
 
   final data = response.data;
 
