@@ -66,7 +66,7 @@ Widget buildMap(
       PolylineLayer(
         polylines: polylines,
       ),
-      CurrentLocationLayer(
+      if (!kIsWeb) CurrentLocationLayer(
         alignPositionStream: alignposstream.stream,
         alignPositionOnUpdate: alignonupdate,
       ),
