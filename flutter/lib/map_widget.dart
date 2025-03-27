@@ -271,7 +271,14 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                   return bottom_bar(
                     metadata: _selectedMetadata,
                     scrollController: scrollController,
+                    onClose: () {
+                      _bottomSheetController.animateTo(0.0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut);
+                      setState(() => _isBottomSheetVisible = false);
+                    },
                   );
+
                 },
               ),
             ),
