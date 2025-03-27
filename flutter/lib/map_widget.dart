@@ -43,7 +43,6 @@ Widget buildMap(
   Function(Map<String, dynamic>) onPinTap,
   Map<LatLng, Map<String, dynamic>> markerMetadata,
 ) {
-  final theme = Theme.of(context);
 
   return FlutterMap(
     mapController: mapcontroller.mapController,
@@ -58,7 +57,8 @@ Widget buildMap(
         tileProvider: CancellableNetworkTileProvider(),
       ),
       MarkerLayer(
-        markers: markers
+        markers: markers,
+        rotate: true,
       ),
       PolylineLayer(
         polylines: polylines,
@@ -197,7 +197,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _alignPositionOnUpdate = AlignOnUpdate.always;
+    _alignPositionOnUpdate = AlignOnUpdate.once;
     _alignPositionStreamController = StreamController<double?>();
 
     _markers.clear();
@@ -235,10 +235,12 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           point: position,
           child: GestureDetector(
             onTap: () => selectedAMarker(_filteredmarkers[listposition]),
-            child: const Icon(
-              Icons.wc,
+            child: Image.asset(
+              'assets/images/ToiletIcon_final.png',
+              width: 40,
+              height: 54,
               color: Colors.blue,
-              size: 40,
+              alignment: FractionalOffset(0, 27),
             ),
           ),
         ),
@@ -268,14 +270,16 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           height: 40,
           listPos: listposition,
           metadata: metadata,
-          facilityType: Type.WASHROOM,
+          facilityType: Type.FOUNTAIN,
           point: position,
           child: GestureDetector(
             onTap: () => selectedAMarker(_filteredmarkers[listposition]),
-            child: const Icon(
-              Icons.wc,
+            child: Image.asset(
+              'assets/images/FountainIcon_final.png',
+              width: 40,
+              height: 54,
               color: Colors.blue,
-              size: 40,
+              alignment: FractionalOffset(0, 27),
             ),
           ),
         ),
@@ -517,7 +521,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 // Align the location marker to the center of the map widget
                 // on location update until user interact with the map.
                 setState(
-                  () => _alignPositionOnUpdate = AlignOnUpdate.always,
+                  () => _alignPositionOnUpdate = AlignOnUpdate.once,
                 );
                 // Align the location marker to the center of the map widget
                 // and zoom the map to level 18.
