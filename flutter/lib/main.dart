@@ -17,7 +17,7 @@ String get apiUrl => const String.fromEnvironment('API_URL', defaultValue: 'http
 const String _firstLaunchKey = 'is_first_launch';
 
 void main() async {
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "assets/.env");
   runApp(const MyApp());
 }
 
@@ -54,7 +54,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String selectedTab = 'Map';
   bool _showTutorial = false;
-  bool _isFirstLaunch = true;
 
   @override
   void initState() {
