@@ -275,7 +275,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     setState(() {
       _selectedMarker = mark;
       _filteredmarkers[updatedMarker.listPos] = updatedMarker;
-      _key.currentState!.openDrawer();
+      if(kIsWeb) _key.currentState!.openDrawer();
       if (previousMarker != null) {
         MarkerState returnMarker = MarkerState(
           width: 40,
@@ -406,8 +406,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   Future<LatLng> getLocation() async {
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
-    return LatLng(position.latitude, position.longitude);
+    Position? position = await Geolocator.getLastKnownPosition();
+    return LatLng(position!.latitude, position!.longitude);
   }
 
   void getResults(String input) async {
@@ -422,7 +422,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
     String request =
         '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius&strictbounds=true';
-
     Response response = await Dio().get(request);
     final predictions = response.data['predictions'];
 
@@ -671,14 +670,24 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           initialIndex: (kIsWeb && _selectedMarker != null) ? 1 : 0,
           length: (kIsWeb && _selectedMarker != null) ? 2 : 1, 
           child: Scaffold(
-            appBar: AppBar( 
-              bottom: TabBar (
-                tabs: [
-                  const Tab(icon: Icon(Icons.filter_alt), text: "Filter"),
-                  if (kIsWeb && _selectedMarker != null) const Tab(icon: Icon(Icons.location_on))
-                ],
-            )
+            appBar: PreferredSize(
+            preferredSize: Size.fromHeight(kToolbarHeight+18),
+            child: Container(
+              child: SafeArea(
+                child: Column(
+                  children: <Widget>[
+                    //Expanded(child: new Container()),
+                    TabBar(
+                      tabs: [
+                        const Tab(icon: Icon(Icons.filter_alt), text: "Filter"),
+                        if (kIsWeb && _selectedMarker != null) const Tab(icon: Icon(Icons.location_on))
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
+          ),
             body: TabBarView(
               children: [
                 ListView(

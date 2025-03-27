@@ -51,6 +51,7 @@ flutter/android/app/key.jks
 flutter/android/app/debug/
 flutter/android/app/profile/
 flutter/android/app/release/
+flutter/android/app/.cxx
 
 # === 📌 Backend (Node.js) ===
 backend/node_modules/
@@ -70,6 +71,7 @@ flutter/linux/flutter/generated_plugin_registrant.h
 flutter/linux/flutter/generated_plugins.cmake
 flutter/macos/Flutter/GeneratedPluginRegistrant.swift
 flutter/windows/flutter/generated_plugin_registrant.cc
+flutter/windows/flutter/generated_plugin_registrant.h
 flutter/windows/flutter/generated_plugins.cmake
 flutter/.flutter-plugins
 flutter/.flutter-plugins-dependencies

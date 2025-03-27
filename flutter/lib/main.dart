@@ -54,7 +54,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String selectedTab = 'Map';
   bool _showTutorial = false;
-  final String? apikey = dotenv.env['PLACES_API_KEY'];
+  final String? placesAPIKey= dotenv.env['PLACES_API_KEY'];
   final String? graphapikey = dotenv.env['GRAPHHOPPER_API_KEY'];
   final String? apiUrl = dotenv.env['API_URL'];
 
@@ -99,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (tab) {
       case 'Map':
         return MapWidget(
-          placesAPIKey: apiKey,
+          placesAPIKey: placesAPIKey,
           graphapikey: graphapikey,
           washroomLocations: washroomLocations,
           waterFountainLocations: waterFountainLocations, // Add empty list for now since we're not using water fountains yet
