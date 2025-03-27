@@ -1,102 +1,253 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'map_widget.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-Future<void> main() async {
-  await dotenv.load(fileName: "assets/.env"); // First Load dotenv  in main function
-  runApp(MyApp());
+import 'map_widget.dart';
+import 'widgets/app_bar.dart';
+import 'widgets/tutorial_widget.dart';
+import 'widgets/about_us_widget.dart';
+import 'widgets/contact_widget.dart';
+import 'theme/app_theme.dart';
+
+const String apiKey = String.fromEnvironment('PLACES_API_KEY');
+String get apiUrl => const String.fromEnvironment('API_URL', defaultValue: 'http://localhost:5001');
+const String _firstLaunchKey = 'is_first_launch';
+
+void main() async {
+  await dotenv.load(fileName: "assets/.env");
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'H2G0',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color.fromARGB(255, 72, 140, 230)),
+        colorScheme: ColorScheme.light(
+          primary: AppTheme.primaryLight,
+          secondary: AppTheme.primaryDark,
+          surface: Colors.white,
+          background: Colors.white,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+        ),
         useMaterial3: true,
       ),
-      home: MyHomePage(),
+      home: const MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
-  Future<Map<String, dynamic>> fetchData() async {
-    //final String? apiUrl = dotenv.env['API_URL'];
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
 
+class _MyHomePageState extends State<MyHomePage> {
+  String selectedTab = 'Map';
+  bool _showTutorial = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFirstLaunch();
+  }
+
+  Future<void> _checkFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch = prefs.getBool(_firstLaunchKey) ?? true;
+    
+    if (isFirstLaunch) {
+      setState(() {
+        _showTutorial = true;
+      });
+      await prefs.setBool(_firstLaunchKey, false);
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchData() async {
+    final String url = apiUrl.startsWith('http') ? apiUrl : 'http://$apiUrl';
+    final Uri uri = Uri.parse('$url/api/locations');
     try {
-      //final response = await http.get(Uri.parse('$apiUrl/locations'));
-      final response =
-          await http.get(Uri.parse('https://h2g0-server.onrender.com/api/locations'));
+      final response = await http.get(uri);
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data;
+        return json.decode(response.body);
       } else {
-        throw Exception('Failed to load data - 1');
+        throw Exception('Failed to load data: ${response.statusCode}');
       }
-    } catch (error) {
-      print('Error fetching data: $error');
-      throw Exception('Failed to load data - 2');
+    } catch (e) {
+      throw Exception('Failed to connect to server: $e');
+    }
+  }
+
+  Widget _buildBody(String tab, List washroomLocations) {
+    switch (tab) {
+      case 'Map':
+        return MapWidget(
+          placesAPIKey: apiKey,
+          washroomLocations: washroomLocations,
+          waterFountainLocations: [], // Add empty list for now since we're not using water fountains yet
+        );
+      case 'Tutorial':
+        return TutorialWidget(
+          isFirstLaunch: false,
+          onFinish: () {
+            setState(() {
+              selectedTab = 'Map';
+            });
+          },
+        );
+      case 'Submission Form':
+        return Center(child: Text("Submission Form Page"));
+      case 'About Us':
+        return const AboutUsWidget();
+      case 'Contact':
+        return const ContactWidget();
+      default:
+        return Center(child: Text("Unknown Page"));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final String? apikey = dotenv.env['PLACES_API_KEY'];
-    final String? graphapikey = dotenv.env['GRAPHHOPPER_API_KEY'];
+    if (_showTutorial) {
+      return TutorialWidget(
+        isFirstLaunch: true,
+        onFinish: () {
+          setState(() {
+            _showTutorial = false;
+            selectedTab = 'Map';
+          });
+        },
+      );
+    }
 
-    //return MapWidget(placesAPIKey: apikey);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("Facilities Map")),
-      body: FutureBuilder<Map<String, dynamic>>(
+    return WillPopScope(
+      onWillPop: () async {
+        if (selectedTab != 'Map') {
+          setState(() {
+            selectedTab = 'Map';
+          });
+          return false;
+        }
+        return true;
+      },
+      child: FutureBuilder<Map<String, dynamic>>(
         future: fetchData(),
         builder: (context, snapshot) {
+          Widget body;
+
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            body = const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            body = Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             final washroomLocations = snapshot.data!['washroomLocations'];
-            final waterFountainLocations = snapshot.data!['fountainLocations'];
-
-            // Return the MapWidget with fetched data
-            return MapWidget(
-              placesAPIKey: apikey,
-              graphapikey: graphapikey, // Pass the API key to MapWidget
-              washroomLocations: washroomLocations,
-              waterFountainLocations: waterFountainLocations,
-            );
+            body = _buildBody(selectedTab, washroomLocations);
           } else {
-            // If no data available, show a fallback message
-            return Center(child: Text('No data available'));
+            body = const Center(child: Text('No data available'));
           }
+
+          return Scaffold(
+            appBar: ResponsiveAppBar(
+              onTabSelected: (label) {
+                setState(() {
+                  selectedTab = label;
+                });
+              },
+            ),
+            endDrawer: MediaQuery.of(context).size.width <= 600
+                ? Drawer(
+                    child: Container(
+                      decoration: AppTheme.appBarGradient,
+                      child: ListView(
+                        padding: EdgeInsets.zero,
+                        children: [
+                          DrawerHeader(
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('H2G0', style: AppTheme.appBarTitle),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Navigation Menu',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    color: Colors.white.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ...['Map', 'Tutorial', 'Submission Form', 'About Us', 'Contact'].map((label) {
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: AppTheme.tabBackground,
+                              ),
+                              child: ListTile(
+                                title: Text(
+                                  label,
+                                  style: AppTheme.tabTextStyle,
+                                ),
+                                leading: Icon(
+                                  _getIconForLabel(label),
+                                  color: AppTheme.tabText,
+                                ),
+                                onTap: () {
+                                  Navigator.of(context).pop();
+                                  setState(() {
+                                    selectedTab = label;
+                                  });
+                                },
+                                hoverColor: AppTheme.primaryLight.withOpacity(0.1),
+                                splashColor: AppTheme.primaryLight.withOpacity(0.2),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  )
+                : null,
+            body: body,
+          );
         },
       ),
     );
+  }
+
+  IconData _getIconForLabel(String label) {
+    switch (label) {
+      case 'Map':
+        return Icons.map;
+      case 'Tutorial':
+        return Icons.help_outline;
+      case 'Submission Form':
+        return Icons.add_location_alt;
+      case 'About Us':
+        return Icons.info_outline;
+      case 'Contact':
+        return Icons.contact_mail;
+      default:
+        return Icons.circle;
+    }
   }
 }

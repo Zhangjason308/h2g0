@@ -1,6 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import { MongoClient } from 'mongodb';
+import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
+console.log("Loaded API key:", process.env.PLACES_API_KEY);
+
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -9,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 const client = new MongoClient('mongodb+srv://ADMIN_ACCESS:BCICTWLRWDUETWHNJGB3ATBIWTAPBO1@cluster0.3qhwi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
+
 async function connectToDatabase() {
     try {
         await client.connect();
@@ -38,6 +45,57 @@ app.get('/locations', async (req, res) => {
       res.status(500).send('Error fetching data');
     }
   });
+
+app.get('/api/autocomplete', async (req, res) => {
+  const input = req.query.input;
+  const apiKey = process.env.PLACES_API_KEY;
+  if (!input || !apiKey) {
+    return res.status(400).json({ error: 'Missing input or API key' });
+  }
+
+  try {
+    const googleRes = await axios.get('https://maps.googleapis.com/maps/api/place/autocomplete/json', {
+      params: {
+        input: input,
+        key: apiKey,
+        type: 'geocode',
+        location: '45.424721,-75.695000',
+        radius: 5000,
+      }
+    });
+
+    res.json(googleRes.data);
+  } catch (error) {
+    console.error('Error fetching autocomplete:', error);
+    res.status(500).json({ error: 'Failed to fetch autocomplete results' });
+  }
+});
+
+app.get('/api/place-details', async (req, res) => {
+  const placeid = req.query.placeid;
+  const apiKey = process.env.PLACES_API_KEY;
+
+  if (!placeid || !apiKey) {
+    return res.status(400).json({ error: 'Missing placeid or API key' });
+  }
+
+  try {
+    const googleRes = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
+      params: {
+        placeid,
+        fields: 'geometry',
+        key: apiKey,
+      },
+    });
+
+    res.json(googleRes.data);
+  } catch (error) {
+    console.error('Error fetching place details:', error);
+    res.status(500).json({ error: 'Failed to fetch place details' });
+  }
+});
+
+  
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
