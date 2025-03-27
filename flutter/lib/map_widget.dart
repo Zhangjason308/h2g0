@@ -30,6 +30,9 @@ Widget buildMap(
   AnimatedMapController mapcontroller,
   BuildContext context,
   List<Marker> markers,
+  bool posAdded,
+  Function(Map<String, dynamic>) onPinTap,
+  Map<LatLng, Map<String, dynamic>> markerMetadata,
 ) {
   final theme = Theme.of(context);
 
@@ -58,8 +61,9 @@ Widget buildMap(
             backgroundColor: theme.colorScheme.primary,
             onPressed: () {
               mapcontroller.centerOnPoint(
-                  LatLng(45.424721, -75.695000),
-                  zoom: 16);
+                LatLng(45.424721, -75.695000),
+                zoom: 16,
+              );
             },
             child: Icon(
               Icons.my_location,
@@ -141,15 +145,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         'name': location['NAME'],
         'address': location['ADDRESS'],
         'telephone': location['REPORT_TELEPHONE'],
-        'hours': {
-          'mon': location['HOURS_MONDAY_OPEN'],
-          'tue': location['HOURS_TUESDAY_OPEN'],
-          'wed': location['HOURS_WEDNESDAY_OPEN'],
-          'thu': location['HOURS_THURSDAY_OPEN'],
-          'fri': location['HOURS_FRIDAY_OPEN'],
-          'sat': location['HOURS_SATURDAY_OPEN'],
-          'sun': location['HOURS_SUNDAY_OPEN'],
-        }
+        'hours monday open': location['HOURS_MONDAY_OPEN'],
+        'hours tuesday open': location['HOURS_TUESDAY_OPEN'],
+        'hours wednesday open': location['HOURS_WEDNESDAY_OPEN'],
+        'hours thursday open': location['HOURS_THURSDAY_OPEN'],
+        'hours friday open': location['HOURS_FRIDAY_OPEN'],
+        'hours saturday open': location['HOURS_SATURDAY_OPEN'],
+        'hours sunday open': location['HOURS_SUNDAY_OPEN'],
       };
 
       _markerMetadata[position] = metadata;
@@ -208,21 +210,16 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
 
     void getResults(String input) async {
-      String baseURL =
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+      String baseURL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
       String type = 'geocode';
       String location = '45.424721 -75.695000';
       String radius = '5000';
 
-      String request =
-          '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
+      String request = '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
       Response response = await Dio().get(request);
 
       final predictions = response.data['predictions'];
-
-      List<Place> displayResults = predictions.map<Place>((p) {
-        return Place(p['description'], p['place_id']);
-      }).toList();
+      List<Place> displayResults = predictions.map<Place>((p) => Place(p['description'], p['place_id'])).toList();
 
       setState(() {
         placesList = displayResults;
@@ -230,12 +227,10 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
 
     void getLatLng(String placeId, String address) async {
-      String baseURL =
-          'https://maps.googleapis.com/maps/api/place/details/json';
+      String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
       String fields = 'geometry';
 
-      String request =
-          '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
+      String request = '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
       Response response = await Dio().get(request);
 
       final result = response.data['result']['geometry']['location'];
@@ -258,7 +253,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 setState(() => _isBottomSheetVisible = false);
               }
             },
-            child: buildMap(_animatedMapController, context, _markers),
+            child: buildMap(_animatedMapController, context, _markers, _posAdded, _handlePinTap, _markerMetadata),
           ),
 
           if (_isBottomSheetVisible)
@@ -293,9 +288,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
             width: isPortrait ? 600 : 500,
             textInputAction: TextInputAction.next,
             clearQueryOnClose: false,
-            onFocusChanged: (isFocused) => {
-              if (!isFocused)
-                setState(() => placesList = [])
+            onFocusChanged: (isFocused) {
+              if (!isFocused) setState(() => placesList = []);
             },
             debounceDelay: const Duration(milliseconds: 500),
             onSubmitted: (_) => _controller.close(),
