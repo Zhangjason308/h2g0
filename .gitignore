@@ -72,3 +72,13 @@ flutter/windows/flutter/generated_plugin_registrant.cc
 flutter/windows/flutter/generated_plugins.cmake
 flutter/.flutter-plugins
 flutter/.flutter-plugins-dependencies
+
+# === 📌 Flutter Generated (Do Not Track) ===
+**/GeneratedPluginRegistrant.*
+**/flutter_export_environment.sh
+**/ephemeral/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+flutter/android/local.properties
+
+backend/.env

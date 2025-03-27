@@ -59,6 +59,7 @@ class MyHomePage extends StatelessWidget {
         throw Exception('Failed to load data - 1');
       }
     } catch (error) {
+      print('Error fetching data: $error');
       throw Exception('Failed to load data - 2');
     }
   }
@@ -80,15 +81,14 @@ class MyHomePage extends StatelessWidget {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             final washroomLocations = snapshot.data!['washroomLocations'];
-            //final waterFountainLocations = snapshot.data!['fountainLocations'];
+            final waterFountainLocations = snapshot.data!['fountainLocations'];
 
             // Return the MapWidget with fetched data
             return MapWidget(
               placesAPIKey: apikey, // Pass the API key to MapWidget
               washroomLocations: washroomLocations,
-              //waterFountainLocations: waterFountainLocations,
+              waterFountainLocations: waterFountainLocations,
             );
-            
           } else {
             // If no data available, show a fallback message
             return Center(child: Text('No data available'));
