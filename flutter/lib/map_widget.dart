@@ -196,15 +196,8 @@ void initState() {
       String type = 'geocode';
       String location = '45.424721 -75.695000';
       String radius = '5000';
-      //TODO Add session token
-
-      String request =
-          'http://localhost:5001/api/autocomplete';
-
-      Response response = await Dio().get(
-        request,
-        queryParameters: {'input': input},
-      );
+      String request = '$baseURL?input=$input&key=$apiKey&type=$type&location=$location&radius=$radius';
+      Response response = await Dio().get(request);
 
 
       final predictions = response.data['predictions'];
@@ -232,27 +225,12 @@ void initState() {
   String baseURL = 'https://maps.googleapis.com/maps/api/place/details/json';
   String fields = 'geometry';
 
-  String request = 'http://localhost:5001/api/place-details';
-  Response response = await Dio().get(
-  request,
-  queryParameters: {'placeid': placeId},
-);
+      String request = '$baseURL?placeid=$placeId&fields=$fields&key=$apiKey';
+      Response response = await Dio().get(request);
 
-
-  final data = response.data;
-
-  if (data == null || !data.containsKey('result')) {
-    return;
-  }
-
-  final location = data['result']['geometry']['location'];
-
-  if (location == null || location['lat'] == null || location['lng'] == null) {
-    return;
-  }
-
-  double lat = location['lat'] as double;
-  double lng = location['lng'] as double;
+      final result = response.data['result']['geometry']['location'];
+      double lat = result['lat'] as double;
+      double lng = result['lng'] as double;
 
   _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
   addMarker(LatLng(lat, lng));
