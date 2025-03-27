@@ -783,10 +783,17 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     ),
                     Divider(),
                     Row(
+                      
                       children: [
-                        ElevatedButton(onPressed: () => clearFilters(facility), child: Text("Clear Filters")),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton(onPressed: () => clearFilters(facility), child: Text("Clear Filters")),
+                        ),
                         Spacer(),
-                        ElevatedButton(onPressed: () => applyFilters(facility), child: Text("Apply")),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton(onPressed: () => applyFilters(facility), child: Text("Apply Filters")),
+                        ),
                       ],
                     )
                   ],
