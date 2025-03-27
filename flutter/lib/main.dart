@@ -81,14 +81,14 @@ class MyHomePage extends StatelessWidget {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             final washroomLocations = snapshot.data!['washroomLocations'];
-            //final waterFountainLocations = snapshot.data!['fountainLocations'];
+            final waterFountainLocations = snapshot.data!['fountainLocations'];
 
             // Return the MapWidget with fetched data
             return MapWidget(
               placesAPIKey: apikey, // Pass the API key to MapWidget
               graphhopperAPIKey: graphapikey,
               washroomLocations: washroomLocations,
-              //waterFountainLocations: waterFountainLocations,
+              waterFountainLocations: waterFountainLocations,
             );
             
           } else {

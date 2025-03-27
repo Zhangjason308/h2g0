@@ -17,14 +17,14 @@ class MapWidget extends StatefulWidget {
   final String? placesAPIKey;
   final String? graphhopperAPIKey;
   final List washroomLocations;
-  //final List waterFountainLocations;
+  final List waterFountainLocations;
 
   const MapWidget(
       {super.key,
       required this.placesAPIKey,
       required this.graphhopperAPIKey,
-      required this.washroomLocations});
-      //required this.waterFountainLocations});
+      required this.washroomLocations,
+      required this.waterFountainLocations});
 
   @override
   State<MapWidget> createState() => _MapWidget();
@@ -77,12 +77,14 @@ Widget buildMap(AnimatedMapController mapcontroller, BuildContext context, List<
   );
 }
 
+enum SelectedFacilitiy {WASHROOM, FOUNTAIN}
 class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
-
+  
   final _controller = FloatingSearchBarController();
   List<Place> placesList = [];
 
   final List<Marker> _markers = [];
+  List<Marker> _filteredmarkers = [];
   final List<Polyline> _polylines = [];
   bool _posAdded = false;
   MarkerState? _selectedMarker;
@@ -114,9 +116,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       _markers.clear();
       int mark = 0;
       for (var location in widget.washroomLocations) {
-        print("made it here?");
-        double lat = double.parse(location['Y_COORDINATE']) ?? 0.0; 
-        double lng = double.parse(location['X_COORDINATE']) ?? 0.0;
+        double lat = double.parse(location['Y_COORDINATE']); 
+        double lng = double.parse(location['X_COORDINATE']);
         String name =  (location['NAME']) as String;
         int position = mark;
 
@@ -124,12 +125,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           MarkerState(
             width: 40,
             height: 40,
+            facilityType: Type.WASHROOM,
             name: name,
             listPos: mark,
             point: LatLng(lat, lng),
             child: GestureDetector(
               onTap: () {
-                selectedAMarker(_markers[position]);
+                selectedAMarker(_filteredmarkers[position]);
               },
               child: const Icon(
                 Icons.wc, // Washroom icon
@@ -141,54 +143,122 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         );
         mark++;
       }
+
+      for (var location in widget.waterFountainLocations) {
+        double lat = double.parse(location['Y_COORDINATE']); 
+        double lng = double.parse(location['X_COORDINATE']);
+        String name =  (location['BUILDING_NAME']) as String;
+        int position = mark;
+
+        _markers.add(
+          MarkerState(
+            width: 40,
+            height: 40,
+            facilityType: Type.FOUNTAIN,
+            name: name,
+            listPos: mark,
+            point: LatLng(lat, lng),
+            child: GestureDetector(
+              onTap: () {
+                selectedAMarker(_filteredmarkers[position]);
+              },
+              child: const Icon(
+                Icons.water_drop, // Washroom icon
+                color: Colors.blue,
+                size: 40,
+              ),
+            )
+          ),
+        );
+        mark++;
+      }
   
     });
+
+    _filteredmarkers = List<Marker>.from(_markers);
   }
 
   void selectedAMarker(Marker marker) {
     MarkerState mark = marker as MarkerState;
-    print("${mark.name} at ${mark.point}");
+    int index = _filteredmarkers.indexOf(marker);
+    print("${mark.name} of type ${mark.facilityType}");
     MarkerState? previousMarker = _selectedMarker;
 
     MarkerState updatedMarker = MarkerState(
       width: 40,
       height: 40,
+      facilityType: mark.facilityType,
       point: mark.point, 
-      child: const Icon(
+      child: (mark.facilityType == Type.WASHROOM)
+        ? const Icon(
         Icons.wc, // Washroom icon
+        color: Colors.red,
+        size: 40)
+        : const Icon(
+        Icons.water_drop, // Fountain icon
         color: Colors.red,
         size: 40,
       ), 
       name: mark.name, 
-      listPos: mark.listPos);
+      listPos: index);
 
-      setState(() {
-        _selectedMarker = mark;
-        _markers[mark.listPos] = updatedMarker;
-        if (previousMarker != null) {
-          MarkerState returnMarker = MarkerState(
+    setState(() {
+      _selectedMarker = mark;
+      _filteredmarkers[updatedMarker.listPos] = updatedMarker;
+      if (previousMarker != null) {
+        print(previousMarker.facilityType);
+        MarkerState returnMarker = MarkerState(
+          width: 40,
+          height: 40,
+          facilityType: previousMarker.facilityType,
+          name: previousMarker.name,
+          listPos: previousMarker.listPos,
+          point: previousMarker.point,
+          child: GestureDetector(
+            onTap: () {
+              selectedAMarker(_filteredmarkers[previousMarker.listPos]);
+            },
+            child: (previousMarker.facilityType == Type.WASHROOM)
+              ? const Icon(
+              Icons.wc, // Washroom icon
+              color: Colors.blue,
+              size: 40)
+              : const Icon(
+              Icons.water_drop, // Fountain icon
+              color: Colors.blue,
+              size: 40,
+            ), 
+          )
+        );
+
+        _filteredmarkers[previousMarker.listPos] = returnMarker;
+      }
+    });
+      //getDirections(LatLng(45.27856781358763, -75.71089782883634), marker.point);
+
+  }
+
+  void clearSelectedMarker() {
+    setState(() {
+      if (_selectedMarker != null)
+      {
+        _filteredmarkers[_selectedMarker!.listPos] = MarkerState(
             width: 40,
             height: 40,
-            name: previousMarker.name,
-            listPos: previousMarker.listPos,
-            point: previousMarker.point,
+            facilityType: Type.WASHROOM,
+            name: _selectedMarker!.name,
+            listPos: _selectedMarker!.listPos,
+            point: _selectedMarker!.point,
             child: GestureDetector(
               onTap: () {
-                selectedAMarker(_markers[previousMarker.listPos]);
+                selectedAMarker(_filteredmarkers[_selectedMarker!.listPos]);
               },
-              child: const Icon(
-                Icons.wc, // Washroom icon
-                color: Colors.blue,
-                size: 40,
-              ),
+              child: _selectedMarker!.child
             )
           );
-
-          _markers[previousMarker.listPos] = returnMarker;
-        }
-      });
-      getDirections(LatLng(45.27856781358763, -75.71089782883634), marker.point);
-
+          _selectedMarker = null;
+      }      
+    });
   }
 
   void getDirections(LatLng source, LatLng destination) async {
@@ -217,27 +287,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       });
   }
 
-  // Loop through each water fountain location and create a marker
-  // for (var location in widget.waterFountainLocations) {
-  //   double lat = location['lat'];
-  //   double lng = location['lng'];
-
-  //   _markers.add(
-  //     Marker(
-  //       width: 40,
-  //       height: 40,
-  //       point: LatLng(lat, lng),
-  //       child: const Icon(
-  //         Icons.local_drink, // Water fountain icon
-  //         color: Colors.green,
-  //         size: 40,
-  //       ),
-  //     ),
-  //   );
-  // }
-  // });
-
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -245,6 +294,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         MediaQuery.of(context).orientation == Orientation.portrait;
     String? selectedID;
     String? apiKey = widget.placesAPIKey;
+    
     
     void addMarker(LatLng coordinates) {
       if (_posAdded) {
@@ -331,10 +381,123 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         _posAdded = true;
       });
 }
+ 
+    void viewWashrooms() { // Make only washroom markers visible
+      setState(() {
+          List<Marker> tempMarkers = List<Marker>.from(_markers);
+          tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.WASHROOM).toList();
+          _filteredmarkers.clear();
+          for (int i = 0; i < tempMarkers.length; i++) {
+            int loc = i;
+            _filteredmarkers.add(
+              MarkerState(
+                width: 40,
+                height: 40,
+                facilityType: Type.WASHROOM,
+                name: (tempMarkers[loc] as MarkerState).name,
+                listPos: loc,
+                point: tempMarkers[loc].point,
+                child: GestureDetector(
+                  onTap: () {
+                    selectedAMarker(_filteredmarkers[loc]);
+                  },
+                  child: const Icon(
+                    Icons.wc, // Washroom icon
+                    color: Colors.blue,
+                    size: 40,
+                  ),
+                )
+              ),
+            );
+          }
+          _selectedMarker = null;
+        }
+      );
+    }
+
+    void viewFountains() {
+      setState(() {
+          List<Marker> tempMarkers = List<Marker>.from(_markers);
+          tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.FOUNTAIN).toList();
+          _filteredmarkers.clear();
+          for (int i = 0; i < tempMarkers.length; i++) {
+            int loc = i;
+            _filteredmarkers.add(
+              MarkerState(
+                width: 40,
+                height: 40,
+                facilityType: Type.FOUNTAIN,
+                name: (tempMarkers[loc] as MarkerState).name,
+                listPos: loc,
+                point: tempMarkers[loc].point,
+                child: GestureDetector(
+                  onTap: () {
+                    selectedAMarker(_filteredmarkers[loc]);
+                  },
+                  child: const Icon(
+                    Icons.water_drop, // Washroom icon
+                    color: Colors.blue,
+                    size: 40,
+                  ),
+                )
+              ),
+            );
+          }
+          _selectedMarker = null;
+        }
+      );
+    }
+
+    void applyFilters(List<int> matrix) {
+      
+    }
 
     return Scaffold(
+      drawer: Drawer(
+        width: 400,
+        child: DefaultTabController(
+          length: 2, 
+          child: Scaffold(
+            appBar: AppBar( 
+              bottom: const TabBar (
+                tabs: [
+                  Tab(icon: Icon(Icons.filter_alt)),
+                  Tab(icon: Icon(Icons.directions_walk))
+                ],
+            )
+            ),
+            body: TabBarView(
+              children: [
+                ListView(
+                  // Important: Remove any padding from the ListView.
+                  padding: EdgeInsets.zero,
+                  children: [
+                    const DrawerHeader(
+                      decoration: BoxDecoration(color: Colors.blue),
+                      child: Text('Drawer Header'),
+                    ),
+                    ListTile(
+                      title: const Text('Filter by Washroom'),
+                      onTap: () {
+                        viewWashrooms();
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Filter by Fountain'),
+                      onTap: () {
+                          viewFountains();
+                      },
+                    ),
+                  ],
+                ),
+                Icon(Icons.directions_walk)
+              ]
+              )
+          )
+        )
+      ),
       body: Stack(children: [
-        buildMap(_animatedMapController, context, _markers, _polylines, _posAdded, _selectedMarker, _alignPositionStreamController, _alignPositionOnUpdate),
+        buildMap(_animatedMapController, context, _filteredmarkers, _polylines, _posAdded, _selectedMarker, _alignPositionStreamController, _alignPositionOnUpdate),
         FloatingSearchBar(
           controller: _controller,
           hint: 'Search...',
