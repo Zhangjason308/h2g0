@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const List<String> list = <String>['Washroom', 'Water fountain'];
+const List<String> listType = <String>['Washroom', 'Water fountain'];
+const List<String> listProblem = <String>[
+  'Innacurate Information',
+  'H2G0 Application is broken',
+  'Facility has been damaged',
+  'Other'
+];
 
 class FormWidget extends StatefulWidget {
   const FormWidget({super.key});
@@ -15,7 +21,8 @@ class _FormState extends State<FormWidget> {
   final _formKey = GlobalKey<FormState>();
   late FocusNode formFocusNode;
   final formController = TextEditingController();
-  String facilityTypeValue = list.first;
+  String facilityTypeValue = listType.first;
+  String facilityProblemValue = listProblem.first;
 
   @override
   void initState() {
@@ -39,6 +46,7 @@ class _FormState extends State<FormWidget> {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'facilityType': facilityTypeValue,
+          'problem': facilityProblemValue,
           'description': description,
           'date': date,
           'address': address,
@@ -86,7 +94,25 @@ class _FormState extends State<FormWidget> {
                       facilityTypeValue = value!;
                     });
                   },
-                  items: list.map<DropdownMenuItem<String>>((String value) {
+                  items: listType.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                Text('Problem:'),
+                DropdownButton<String>(
+                  autofocus: false,
+                  value: facilityProblemValue,
+                  icon: const Icon(Icons.arrow_downward),
+                  onChanged: (String? value) {
+                    setState(() {
+                      facilityProblemValue = value!;
+                    });
+                  },
+                  items:
+                      listProblem.map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),
