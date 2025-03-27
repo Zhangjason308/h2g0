@@ -7,12 +7,12 @@ class bottom_bar extends StatelessWidget {
   final VoidCallback onDirections;
 
   const bottom_bar({
-    Key? key,
+    super.key,
     required this.metadata,
     required this.scrollController,
     required this.onClose, 
     required this.onDirections
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

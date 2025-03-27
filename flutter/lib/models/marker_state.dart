@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 enum Type {WASHROOM, FOUNTAIN, COMBO}

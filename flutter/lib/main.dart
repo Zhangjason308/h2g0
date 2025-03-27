@@ -34,7 +34,6 @@ class MyApp extends StatelessWidget {
           primary: AppTheme.primaryLight,
           secondary: AppTheme.primaryDark,
           surface: Colors.white,
-          background: Colors.white,
           onPrimary: Colors.white,
           onSecondary: Colors.white,
         ),

@@ -91,6 +91,7 @@ enum SelectedFacilitiy {WASHROOM, FOUNTAIN}
 enum FountainLocation {INSIDE, OUTSIDE, EITHER}
 
 class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
+  final GlobalKey<ScaffoldState> _key = GlobalKey();
   final _controller = FloatingSearchBarController();
   final DraggableScrollableController _bottomSheetController = DraggableScrollableController();
   final Map<LatLng, Map<String, dynamic>> _markerMetadata = {};
@@ -245,6 +246,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     int index = _filteredmarkers.indexOf(marker);
     MarkerState? previousMarker = _selectedMarker;
 
+
     MarkerState updatedMarker = MarkerState(
       width: 40,
       height: 40,
@@ -273,8 +275,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     setState(() {
       _selectedMarker = mark;
       _filteredmarkers[updatedMarker.listPos] = updatedMarker;
+      _key.currentState!.openDrawer();
       if (previousMarker != null) {
-        print(previousMarker.facilityType);
         MarkerState returnMarker = MarkerState(
           width: 40,
           height: 40,
@@ -314,16 +316,17 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     setState(() {
       if (_selectedMarker != null)
       {
+        int listPos = _selectedMarker!.listPos;
         _filteredmarkers[_selectedMarker!.listPos] = MarkerState(
             width: 40,
             height: 40,
-            facilityType: Type.WASHROOM,
+            facilityType: _selectedMarker!.facilityType,
             metadata: _selectedMarker!.metadata,
             listPos: _selectedMarker!.listPos,
             point: _selectedMarker!.point,
             child: GestureDetector(
               onTap: () {
-                selectedAMarker(_filteredmarkers[_selectedMarker!.listPos]);
+                selectedAMarker(_filteredmarkers[listPos]);
               },
               child: (_selectedMarker!.facilityType == Type.WASHROOM)
               ? Image.asset(
@@ -472,38 +475,41 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
 }
 
-  void viewWashrooms() { // Make only washroom markers visible
+  void viewWashrooms() async {
+    List<Marker> tempMarkers = List<Marker>.from(_markers);
+    tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.WASHROOM).toList(); // Make only washroom markers visible
     setState(() {
-        List<Marker> tempMarkers = List<Marker>.from(_markers);
-        tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.WASHROOM).toList();
-        _filteredmarkers.clear();
-        for (int i = 0; i < tempMarkers.length; i++) {
-          int loc = i;
-          _filteredmarkers.add(
-            MarkerState(
-              width: 40,
-              height: 40,
-              facilityType: Type.WASHROOM,
-              metadata: (tempMarkers[loc] as MarkerState).metadata,
-              listPos: loc,
-              point: tempMarkers[loc].point,
-              child: GestureDetector(
-                onTap: () {
-                  selectedAMarker(_filteredmarkers[loc]);
+      
+      _filteredmarkers.clear();
+      int mark = 0;
+      for (Marker marker in tempMarkers) {
+        int loc = mark;
+        _filteredmarkers.add(
+          MarkerState(
+            width: 40,
+            height: 40,
+            facilityType: Type.WASHROOM,
+            metadata: (marker as MarkerState).metadata,
+            listPos: loc,
+            point: marker.point,
+            child: GestureDetector(
+              onTap: () {
+                selectedAMarker(_filteredmarkers[loc]);
                 },
-                child: Image.asset(
-                  'assets/images/ToiletIcon_final.png',
-                  width: 40,
-                  height: 40,
-                  color: Colors.blue,
-                  alignment: FractionalOffset(0, 27),
-                )
+              child: Image.asset(
+                'assets/images/ToiletIcon_final.png',
+                width: 40,
+                height: 40,
+                color: Colors.blue,
+                alignment: FractionalOffset(0, 27),
               )
-            ),
-          );
-        }
-        _selectedMarker = null;
+            )
+          ),
+        );
+        mark++;
       }
+      _selectedMarker = null;
+    }
     );
   }
 
@@ -557,12 +563,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     //Distance
     bool isLocationEnabled = await Geolocator.isLocationServiceEnabled();
     LatLng? position;
-    if (isLocationEnabled) {
+    if (isLocationEnabled && !kIsWeb) {
       position = await getLocation();
     }
 
-    if (facilityType == SelectedFacilitiy.WASHROOM) viewWashrooms();
-    else if (facilityType == SelectedFacilitiy.FOUNTAIN) viewFountains();
+    if (facilityType == SelectedFacilitiy.WASHROOM) {
+      viewWashrooms();
+    } else if (facilityType == SelectedFacilitiy.FOUNTAIN) viewFountains();
     
     setState(() {
     if (facilityType == SelectedFacilitiy.WASHROOM)
@@ -575,7 +582,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       }
     }
     else if (facilityType == SelectedFacilitiy.FOUNTAIN) {
-      print(filters[4].toString().substring(17));
       if (filters[4] != FountainLocation.EITHER) {
         _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['inout'].toString().toUpperCase() == filters[4].toString().substring(17)).toList();
       }
@@ -584,8 +590,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
     if (filters[6] != 0 && isLocationEnabled && position != null) {
         _filteredmarkers = _filteredmarkers.where((marker) => (getDistance(position!, (marker as MarkerState).point) <= filters[6]*1000)).toList();
-        print(_filteredmarkers.length);
-      };
+      }
     });
 
     setState(() {
@@ -658,18 +663,19 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     final theme = Theme.of(context);
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     String? selectedID;
-    
     return Scaffold(
+      key: _key,
       drawer: Drawer(
         width: (kIsWeb) ? 500 : 300,
         child: DefaultTabController(
-          length: (kIsWeb) ? 2 : 1, 
+          initialIndex: (kIsWeb && _selectedMarker != null) ? 1 : 0,
+          length: (kIsWeb && _selectedMarker != null) ? 2 : 1, 
           child: Scaffold(
             appBar: AppBar( 
-              bottom: const TabBar (
+              bottom: TabBar (
                 tabs: [
-                  Tab(icon: Icon(Icons.filter_alt), text: "Filter"),
-                  if (kIsWeb) Tab(icon: Icon(Icons.location_on))
+                  const Tab(icon: Icon(Icons.filter_alt), text: "Filter"),
+                  if (kIsWeb && _selectedMarker != null) const Tab(icon: Icon(Icons.location_on))
                 ],
             )
             ),
@@ -688,7 +694,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                       value: SelectedFacilitiy.WASHROOM,
                       groupValue: facility,
                       onChanged: (SelectedFacilitiy? value) {
-                        print(facility);
                         viewWashrooms();
                         if(!kIsWeb && _isBottomSheetVisible) closeBottomSheet();
                         setState(() {
@@ -701,13 +706,11 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                       value: SelectedFacilitiy.FOUNTAIN,
                       groupValue: facility,
                       onChanged: (SelectedFacilitiy? value) {
-                        print(facility);
                         viewFountains();
                         if(!kIsWeb && _isBottomSheetVisible) closeBottomSheet();
                         setState(() {
                           facility = value;
                         });
-                        print(facility);
                       },
                     ),
                     Divider(),
@@ -798,7 +801,94 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     )
                   ],
                 ),
-                if (kIsWeb) Icon(Icons.directions_walk)
+                if (kIsWeb && _selectedMarker != null) Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+
+                      // Title + close button row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _selectedMarker?.metadata['name'] ?? 'No Name',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  overflow: TextOverflow.fade
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                clearSelectedMarker();
+                                clearDirections();
+                              }, // ✅ Triggers bottom sheet to hide
+                            ),
+                          ],
+                        ),
+                      ),
+                            
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          children: [
+                            Text(_selectedMarker?.metadata['address'] ?? 'No Address', textAlign: TextAlign.left),
+                            if (_selectedMarker?.metadata['telephone'] != null)
+                            Text('Telephone: ${_selectedMarker?.metadata['telephone']}', textAlign: TextAlign.left),
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [ElevatedButton.icon(
+                                onPressed: () {
+                                    print("direct");
+                                    getLocation().then((value) {
+                                      print("direct!!");
+                                    getDirections(value, _selectedMarker!.point);
+                                  });
+                                },
+                                icon: Icon(Icons.directions),
+                                label: Text("Directions"),),]
+                            ),
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 16),
+                            for (var day in [
+                              'monday',
+                              'tuesday',
+                              'wednesday',
+                              'thursday',
+                              'friday',
+                              'saturday',
+                              'sunday'
+                            ])
+                              if (_selectedMarker?.metadata['hours $day open'] != null)
+                                Text('Open on ${day[0].toUpperCase()}${day.substring(1)}: ${_selectedMarker?.metadata['hours $day open']}'),
+                            
+                            if (_selectedMarker?.metadata['hours'] != null) Text('Hours: ${_selectedMarker?.metadata['hours']}'),
+                            if (_selectedMarker?.metadata['inout'] != null) Text('Inside or Outside?: ${_selectedMarker?.metadata['inout']}'),
+                            if (_selectedMarker?.metadata['yearround'] != null) Text('Year Round?: ${_selectedMarker?.metadata['yearround']}'),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               ]
               )
           )
