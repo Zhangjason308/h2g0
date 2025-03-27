@@ -5,13 +5,15 @@ class bottom_bar extends StatelessWidget {
   final ScrollController scrollController;
   final VoidCallback onClose;
   final VoidCallback onDirections;
+  final VoidCallback removeDropped;
 
   const bottom_bar({
     super.key,
     required this.metadata,
     required this.scrollController,
     required this.onClose, 
-    required this.onDirections
+    required this.onDirections,
+    required this.removeDropped
   });
 
   @override
@@ -76,10 +78,16 @@ class bottom_bar extends StatelessWidget {
                 const Divider(),
                 const SizedBox(height: 16),
                 Row(
-                  children: [ElevatedButton.icon(
+                  children: [
+                    if (metadata['name'] != "Dropped Pin") ElevatedButton.icon(
                     onPressed: onDirections,
                     icon: Icon(Icons.directions),
-                    label: Text("Directions"),),]
+                    label: Text("Directions"),),
+                    if (metadata['name'] == "Dropped Pin")ElevatedButton.icon(
+                    onPressed: removeDropped,
+                    icon: Icon(Icons.close),
+                    label: Text("Remove Pin"),),]
+                    
                 ),
                 const SizedBox(height: 16),
                 const Divider(),

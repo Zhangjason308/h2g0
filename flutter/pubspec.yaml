@@ -47,6 +47,7 @@ dependencies:
   flutter_map_location_marker: any # or latest version
   geolocator: ^13.0.2
   flutter_dotenv: ^5.2.1
+  collection: ^1.19.0
 
 dev_dependencies:
   flutter_test:

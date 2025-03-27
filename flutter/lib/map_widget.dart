@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:h2g0/models/place.dart';
 import 'package:latlong2/latlong.dart';
@@ -107,9 +108,12 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
   bool _isBottomSheetVisible = false;
   bool _posAdded = false;
+  LatLng? droppedCoords;
+  String? droppedAddress;
   MarkerState? _selectedMarker;
   List<Marker> _filteredmarkers = [];
   List<dynamic> filters = [false, false, false, 0.0, FountainLocation.EITHER, false, 0.0];
+  List<ListTile> _directionTiles = [];
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -132,7 +136,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       );
     });
   }
-
   @override
   void dispose() {
     _controller.dispose();
@@ -240,9 +243,39 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
   // Functions
   
+  void clearDroppedPin() {
+    if (_posAdded) {
+      setState(() {
+        _filteredmarkers.removeLast();
+        _selectedMarker = null;
+        _posAdded = false;
+        droppedAddress = null;
+        droppedCoords = null;
+      });
+    }
+  }
+
+  void addDroppedPin() {
+    if (droppedCoords!=null)
+    {
+      addMarker(droppedCoords!, droppedAddress!);
+      setState(() {
+        _posAdded = true;
+      });
+    }
+  }
+
   void selectedAMarker(Marker marker) {
     MarkerState mark = marker as MarkerState;
     int index = _filteredmarkers.indexOf(marker);
+    if (mark.metadata['name'] == "Dropped Pin") {
+      setState(() {
+        _selectedMarker = mark;
+        if(kIsWeb) _key.currentState!.openDrawer();
+        if (!kIsWeb) _handlePinTap(mark.metadata);
+      });
+      return;
+    }
     MarkerState? previousMarker = _selectedMarker;
 
 
@@ -275,7 +308,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       _selectedMarker = mark;
       _filteredmarkers[updatedMarker.listPos] = updatedMarker;
       if(kIsWeb) _key.currentState!.openDrawer();
-      if (previousMarker != null) {
+      if (previousMarker != null && _selectedMarker != previousMarker && previousMarker.metadata['name'] != "Dropped Pin") {
         MarkerState returnMarker = MarkerState(
           width: 40,
           height: 40,
@@ -349,23 +382,26 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
-  void addMarker(LatLng coordinates) {
+  void addMarker(LatLng coordinates, String address) {
     if (_posAdded) {
       _filteredmarkers.removeLast();
     }
 
-    _markerMetadata[coordinates] = {
-      'name': 'Searched Location',
+    Map<String, dynamic> metadata = {
+      'name': 'Dropped Pin',
       'address': 'Searched Address'
     };
 
     _filteredmarkers.add(
-      Marker(
+      MarkerState(
+        metadata: metadata,
+        listPos: _filteredmarkers.length-1,
+        facilityType: Type.COMBO,
         width: 40,
         height: 40,
         point: coordinates,
         child: GestureDetector(
-          onTap: () => _handlePinTap(_markerMetadata[coordinates]!),
+          onTap: () => selectedAMarker(_filteredmarkers[_filteredmarkers.length-1]),
           child: const Icon(
             Icons.location_pin,
             color: Colors.red,
@@ -378,6 +414,35 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     setState(() => _posAdded = true);
   }
 
+  void pruneDirections(List<dynamic> directions) {
+    _directionTiles.clear();
+    setState(() {
+      for (int i = 0; i < directions.length; i++)
+      {
+        if (!(directions[i]['street_name'] == ""))
+        {
+          Icon icon;
+          if((directions[i]['text'] as String).contains("sharp left")) {icon = Icon(Icons.turn_sharp_left);}
+          else if((directions[i]['text'] as String).contains("slight left")) {icon = Icon(Icons.turn_slight_left);}
+          else if((directions[i]['text'] as String).contains("left")) {icon = Icon(Icons.turn_left);}
+          else if((directions[i]['text'] as String).contains("sharp right")) {icon = Icon(Icons.turn_sharp_left);}
+          else if((directions[i]['text'] as String).contains("slight right")) {icon = Icon(Icons.turn_slight_left);}
+          else if((directions[i]['text'] as String).contains("right")) {icon = Icon(Icons.turn_left);}
+          else if((directions[i]['text'] as String).contains("Left")) {icon = Icon(Icons.turn_left);}
+          else {icon = Icon(Icons.arrow_upward);}
+          
+          _directionTiles.add(
+            ListTile(
+              leading: icon,
+              title: Text(directions[i]['text']),
+              subtitle: Text(directions[i]['street_name']),
+            )
+          );
+        }
+      }
+    });
+  }
+
   void getDirections(LatLng source, LatLng destination) async {
     String baseURL = "https://graphhopper.com/api/1/route";
     String sourcePos = "${source.latitude},${source.longitude}";
@@ -387,6 +452,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     String request = '$baseURL?profile=foot&point=$sourcePos&point=$destinationPos&locale=en&points_encoded=false&key=$key';
     Response response = await Dio().get(request);
     List<dynamic> points = response.data['paths'][0]['points']['coordinates'];
+    pruneDirections(response.data['paths'][0]['instructions']);
     List<LatLng> coords = [];
     for (dynamic cord in points) {
       coords.add(LatLng(cord[1], cord[0]));
@@ -467,10 +533,16 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     double lng = location['lng'] as double;
 
     _animatedMapController.centerOnPoint(LatLng(lat, lng), zoom: 16);
-    addMarker(LatLng(lat, lng));
-    setState(() {
-      _posAdded = true;
-    });
+    if (!(await Geolocator.isLocationServiceEnabled()) || kIsWeb)
+    {
+      addMarker(LatLng(lat, lng), address);
+      setState(() {
+        droppedAddress = address;
+        droppedCoords = LatLng(lat, lng);
+        _posAdded = true;
+      });
+    }
+    
 }
 
   void viewWashrooms() async {
@@ -507,6 +579,10 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         mark++;
       }
       _selectedMarker = null;
+      if (_posAdded) {
+        _posAdded = false;
+        addDroppedPin();
+      }
     }
     );
   }
@@ -542,6 +618,10 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           );
         }
         _selectedMarker = null;
+        if (_posAdded) {
+          _posAdded = false;
+          addDroppedPin();
+        }
       }
     );
   }
@@ -558,6 +638,12 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void applyFilters(SelectedFacilitiy? facilityType) async {
+    
+    if (facilityType == SelectedFacilitiy.WASHROOM) {
+      viewWashrooms();
+    } else if (facilityType == SelectedFacilitiy.FOUNTAIN) viewFountains();
+
+    if (DeepCollectionEquality().equals(filters,[false, false, false, 0.0, FountainLocation.EITHER, false, 0.0])) return; // if no filters were applied
     //Distance
     bool isLocationEnabled = await Geolocator.isLocationServiceEnabled();
     LatLng? position;
@@ -565,10 +651,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       position = await getLocation();
     }
 
-    if (facilityType == SelectedFacilitiy.WASHROOM) {
-      viewWashrooms();
-    } else if (facilityType == SelectedFacilitiy.FOUNTAIN) viewFountains();
-    
     setState(() {
     if (facilityType == SelectedFacilitiy.WASHROOM)
     {
@@ -586,9 +668,12 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       if (filters[5]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['yearround'] == "Yes").toList();
     }
 
-    if (filters[6] != 0 && isLocationEnabled && position != null) {
+    if (filters[6] != 0 && !kIsWeb && isLocationEnabled && position != null) {
         _filteredmarkers = _filteredmarkers.where((marker) => (getDistance(position!, (marker as MarkerState).point) <= filters[6]*1000)).toList();
-      }
+    }
+    if (filters[6] != 0 && kIsWeb && _posAdded) {
+      _filteredmarkers = _filteredmarkers.where((marker) => (getDistance(droppedCoords!, (marker as MarkerState).point) <= filters[6]*1000)).toList();
+    }
     });
 
     setState(() {
@@ -621,8 +706,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         metadata: (_filteredmarkers[i] as MarkerState).metadata, 
         listPos: pos, 
         facilityType: (_filteredmarkers[i] as MarkerState).facilityType);
-        
     }
+      addDroppedPin();
     });
   }
 
@@ -647,6 +732,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
   void clearDirections() {
     setState(() {
+      _directionTiles.clear();
       _polylines.clear();
     });
   }
@@ -663,6 +749,11 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     String? selectedID;
     return Scaffold(
       key: _key,
+      onDrawerChanged:(isOpened) {
+        if (kIsWeb && !isOpened && _polylines.isEmpty && _selectedMarker != null) {
+          if (!(_selectedMarker!.metadata['name'] == "Dropped Pin")) clearSelectedMarker();
+        }
+      },
       drawer: Drawer(
         width: (kIsWeb) ? 500 : 300,
         child: DefaultTabController(
@@ -679,7 +770,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     TabBar(
                       tabs: [
                         const Tab(icon: Icon(Icons.filter_alt), text: "Filter"),
-                        if (kIsWeb && _selectedMarker != null) const Tab(icon: Icon(Icons.location_on))
+                        if (kIsWeb && _selectedMarker != null) const Tab(icon: Icon(Icons.location_on), text: "Selected",),
+                        //if (kIsWeb && _polylines.isNotEmpty) const Tab(icon: Icon(Icons.directions), text: "Navigation")
                       ],
                     ),
                   ],
@@ -812,7 +904,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 if (kIsWeb && _selectedMarker != null) Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black26,
@@ -824,6 +915,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     children: [
 
                       // Title + close button row
+                      SizedBox(height: 16),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
@@ -842,9 +934,12 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                             IconButton(
                               icon: const Icon(Icons.close),
                               onPressed: () {
-                                clearSelectedMarker();
-                                clearDirections();
-                              }, // ✅ Triggers bottom sheet to hide
+                                if (!(_selectedMarker!.metadata['name'] == "Dropped Pin"))
+                                {
+                                  clearSelectedMarker();
+                                  clearDirections();
+                                }
+                              }, 
                             ),
                           ],
                         ),
@@ -861,19 +956,36 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                             const Divider(),
                             const SizedBox(height: 16),
                             Row(
-                              children: [ElevatedButton.icon(
+                              children: [
+                                if (_selectedMarker!.metadata['name'] != "Dropped Pin") ElevatedButton.icon(
                                 onPressed: () {
-                                  if (!kIsWeb) {
-                                    getLocation().then((value) {
-                                    getDirections(value, _selectedMarker!.point);
-                                  });
-                                  }
-                                  else {
-                                    if (_posAdded);
-                                  }
+                                    if (!kIsWeb) {
+                                      getLocation().then((value) {
+                                      getDirections(value, _selectedMarker!.point);
+                                    });
+                                    }
+                                    else {
+                                      if (_posAdded) {
+                                        getDirections(droppedCoords!, _selectedMarker!.point);
+                                      }
+                                    }
                                 },
                                 icon: Icon(Icons.directions),
-                                label: Text("Directions"),),]
+                                label: Text("Directions"),),
+                                if (_selectedMarker!.metadata['name'] == "Dropped Pin")ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Color.fromARGB(255, 176, 0, 32),
+                                    foregroundColor: Colors.white
+                                  ),
+                                onPressed: () {
+                                  clearDroppedPin();
+                                  clearDirections();
+                                  applyFilters(facility);
+                                  //closeBottomSheet();
+                                },
+                                icon: Icon(Icons.close, color: Colors.white,),
+                                label: Text("Remove Pin", ),),]
+                    
                             ),
                             const SizedBox(height: 16),
                             const Divider(),
@@ -941,11 +1053,17 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                         getDirections(value, _selectedMarker!.point);
                       }); 
                       }
-                      
                     },
                     onClose: () {
-                      clearSelectedMarker();
-                      clearDirections();
+                      if (!(_selectedMarker!.metadata['name'] == "Dropped Pin"))
+                      {
+                        clearSelectedMarker();
+                        clearDirections();
+                      }
+                      closeBottomSheet();
+                    },
+                    removeDropped: () {
+                      clearDroppedPin();
                       closeBottomSheet();
                     },
                   );
