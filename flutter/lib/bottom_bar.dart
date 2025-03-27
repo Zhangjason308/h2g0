@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 
 class bottom_bar extends StatelessWidget {
   final Map<String, dynamic> metadata;
-  final ScrollController scrollController; // ✅ Add scroll controller
+  final ScrollController scrollController;
+  final VoidCallback onClose;
 
-  const bottom_bar({Key? key, required this.metadata, required this.scrollController}) : super(key: key);
+  const bottom_bar({
+    Key? key,
+    required this.metadata,
+    required this.scrollController,
+    required this.onClose, 
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +27,7 @@ class bottom_bar extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // Gray drag handle
           Container(
             width: 40,
             height: 5,
@@ -31,16 +38,32 @@ class bottom_bar extends StatelessWidget {
             ),
           ),
 
-          Expanded(
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(16.0),
+          // Title + close button row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   metadata['name'] ?? 'No Name',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: onClose, // ✅ Triggers bottom sheet to hide
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              children: [
                 Text(metadata['address'] ?? 'No Address'),
                 if (metadata['telephone'] != null)
                   Text('Telephone: ${metadata['telephone']}'),

@@ -95,6 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
         return MapWidget(
           placesAPIKey: apiKey,
           washroomLocations: washroomLocations,
+          waterFountainLocations: [], // Add empty list for now since we're not using water fountains yet
         );
       case 'Tutorial':
         return TutorialWidget(

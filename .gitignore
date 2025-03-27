@@ -72,3 +72,5 @@ flutter/windows/flutter/generated_plugin_registrant.cc
 flutter/windows/flutter/generated_plugins.cmake
 flutter/.flutter-plugins
 flutter/.flutter-plugins-dependencies
+
+linux/flutter/generated_plugin_registrant.h
