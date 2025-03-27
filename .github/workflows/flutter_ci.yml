@@ -32,6 +32,11 @@ jobs:
       - name: Accept Android Licenses
         run: yes | sdkmanager --licenses
 
+      - name: ✅ Create .env file from secret
+        run: |
+          mkdir -p assets
+          echo "${{ secrets.ENV_FILE }}" > assets/.env
+
       - name: Install Dependencies
         run: flutter pub get
 
