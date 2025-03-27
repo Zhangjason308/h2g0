@@ -56,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _showTutorial = false;
   final String? placesAPIKey= dotenv.env['PLACES_API_KEY'];
   final String? graphapikey = dotenv.env['GRAPHHOPPER_API_KEY'];
-  final String? apiUrl = dotenv.env['API_URL'];
+  final String? urlLoc = dotenv.env['API_URL'];
 
   @override
   void initState() {
@@ -82,7 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       //final response = await http.get(Uri.parse('$apiUrl/locations'));
       final response =
-          await http.get(Uri.parse(apiUrl!));
+          await http.get(Uri.parse(urlLoc!));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data;
@@ -91,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     } catch (error) {
       print('Error fetching data: $error');
-      throw Exception('Failed to load data - 2');
+      throw Exception('Failed to load data - 2 ' + urlLoc!);
     }
   }
 

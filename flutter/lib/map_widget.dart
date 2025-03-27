@@ -863,11 +863,14 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                             Row(
                               children: [ElevatedButton.icon(
                                 onPressed: () {
-                                    print("direct");
+                                  if (!kIsWeb) {
                                     getLocation().then((value) {
-                                      print("direct!!");
                                     getDirections(value, _selectedMarker!.point);
                                   });
+                                  }
+                                  else {
+                                    if (_posAdded);
+                                  }
                                 },
                                 icon: Icon(Icons.directions),
                                 label: Text("Directions"),),]
@@ -932,10 +935,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                   return bottom_bar(
                     metadata: _selectedMetadata,
                     scrollController: scrollController,
-                    onDirections: () {
-                      getLocation().then((value) {
+                    onDirections: () async {
+                      if (await Geolocator.isLocationServiceEnabled()) {
+                        getLocation().then((value) {
                         getDirections(value, _selectedMarker!.point);
-                      });
+                      }); 
+                      }
+                      
                     },
                     onClose: () {
                       clearSelectedMarker();
