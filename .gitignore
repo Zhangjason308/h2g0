@@ -77,3 +77,4 @@ flutter/.flutter-plugins
 flutter/.flutter-plugins-dependencies
 
 linux/flutter/generated_plugin_registrant.h
+flutter/linux/flutter/generated_plugin_registrant.h
