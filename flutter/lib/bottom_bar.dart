@@ -102,7 +102,7 @@ class bottom_bar extends StatelessWidget {
                   'sunday'
                 ])
                   if (metadata['hours $day open'] != null)
-                    Text('Open on ${day[0].toUpperCase()}${day.substring(1)}: ${metadata['hours $day open']}'),
+                    Text('Open on ${day[0].toUpperCase()}${day.substring(1)} from: ${metadata['hours $day open']} to ${metadata['hours $day close']}'),
                 
                 if (metadata['hours'] != null) Text('Hours: ${metadata['hours']}'),
                 if (metadata['inout'] != null) Text('Inside or Outside?: ${metadata['inout']}'),
