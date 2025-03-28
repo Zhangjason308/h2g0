@@ -173,6 +173,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         'hours friday open': location['HOURS_FRIDAY_OPEN'],
         'hours saturday open': location['HOURS_SATURDAY_OPEN'],
         'hours sunday open': location['HOURS_SUNDAY_OPEN'],
+        'hours monday close': location['HOURS_MONDAY_CLOSED'],
+        'hours tuesday close': location['HOURS_TUESDAY_CLOSED'],
+        'hours wednesday close': location['HOURS_WEDNESDAY_CLOSED'],
+        'hours thursday close': location['HOURS_THURSDAY_CLOSED'],
+        'hours friday close': location['HOURS_FRIDAY_CLOSED'],
+        'hours saturday close': location['HOURS_SATURDAY_CLOSED'],
+        'hours sunday close': location['HOURS_SUNDAY_CLOSED'],
       };
 
       _markerMetadata[position] = metadata;
@@ -643,6 +650,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       viewWashrooms();
     } else if (facilityType == SelectedFacilitiy.FOUNTAIN) viewFountains();
 
+    if (_posAdded) {_filteredmarkers.removeLast();}
+
     if (DeepCollectionEquality().equals(filters,[false, false, false, 0.0, FountainLocation.EITHER, false, 0.0])) return; // if no filters were applied
     //Distance
     bool isLocationEnabled = await Geolocator.isLocationServiceEnabled();
@@ -968,6 +977,26 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                                       if (_posAdded) {
                                         getDirections(droppedCoords!, _selectedMarker!.point);
                                       }
+                                      else {
+                                        showDialog<String>(
+                                          context: context,
+                                          builder:
+                                              (BuildContext context) => AlertDialog(
+                                                title: const Text('No Pin!'),
+                                                content: const Text('You have no dropped pins to navigate from!\nSearch to drop a pin!'),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, 'Cancel'),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, 'OK'),
+                                                    child: const Text('OK'),
+                                                  ),
+                                                ],
+                                              ),
+                                        );
+                                      }
                                     }
                                 },
                                 icon: Icon(Icons.directions),
@@ -1000,7 +1029,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                               'sunday'
                             ])
                               if (_selectedMarker?.metadata['hours $day open'] != null)
-                                Text('Open on ${day[0].toUpperCase()}${day.substring(1)}: ${_selectedMarker?.metadata['hours $day open']}'),
+                                Text('Open on ${day[0].toUpperCase()}${day.substring(1)} from: ${_selectedMarker?.metadata['hours $day open']} to ${_selectedMarker?.metadata['hours $day close']}'),
                             
                             if (_selectedMarker?.metadata['hours'] != null) Text('Hours: ${_selectedMarker?.metadata['hours']}'),
                             if (_selectedMarker?.metadata['inout'] != null) Text('Inside or Outside?: ${_selectedMarker?.metadata['inout']}'),
