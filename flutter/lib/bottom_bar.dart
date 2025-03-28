@@ -4,13 +4,17 @@ class bottom_bar extends StatelessWidget {
   final Map<String, dynamic> metadata;
   final ScrollController scrollController;
   final VoidCallback onClose;
+  final VoidCallback onDirections;
+  final VoidCallback removeDropped;
 
   const bottom_bar({
-    Key? key,
+    super.key,
     required this.metadata,
     required this.scrollController,
     required this.onClose, 
-  }) : super(key: key);
+    required this.onDirections,
+    required this.removeDropped
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +48,14 @@ class bottom_bar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  metadata['name'] ?? 'No Name',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    metadata['name'] ?? 'No Name',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      overflow: TextOverflow.fade
+                    ),
                   ),
                 ),
                 IconButton(
@@ -58,17 +65,33 @@ class bottom_bar extends StatelessWidget {
               ],
             ),
           ),
-
+                
           Expanded(
             child: ListView(
               controller: scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               children: [
-                Text(metadata['address'] ?? 'No Address'),
+                Text(metadata['address'] ?? 'No Address', textAlign: TextAlign.left),
                 if (metadata['telephone'] != null)
-                  Text('Telephone: ${metadata['telephone']}'),
+                Text('Telephone: ${metadata['telephone']}', textAlign: TextAlign.left),
                 const SizedBox(height: 16),
-
+                const Divider(),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    if (metadata['name'] != "Dropped Pin") ElevatedButton.icon(
+                    onPressed: onDirections,
+                    icon: Icon(Icons.directions),
+                    label: Text("Directions"),),
+                    if (metadata['name'] == "Dropped Pin")ElevatedButton.icon(
+                    onPressed: removeDropped,
+                    icon: Icon(Icons.close),
+                    label: Text("Remove Pin"),),]
+                    
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 16),
                 for (var day in [
                   'monday',
                   'tuesday',
@@ -80,7 +103,10 @@ class bottom_bar extends StatelessWidget {
                 ])
                   if (metadata['hours $day open'] != null)
                     Text('Open on ${day[0].toUpperCase()}${day.substring(1)}: ${metadata['hours $day open']}'),
-
+                
+                if (metadata['hours'] != null) Text('Hours: ${metadata['hours']}'),
+                if (metadata['inout'] != null) Text('Inside or Outside?: ${metadata['inout']}'),
+                if (metadata['yearround'] != null) Text('Year Round?: ${metadata['yearround']}'),
                 const SizedBox(height: 16),
               ],
             ),

@@ -51,10 +51,11 @@ flutter/android/app/key.jks
 flutter/android/app/debug/
 flutter/android/app/profile/
 flutter/android/app/release/
+flutter/android/app/.cxx
 
 # === 📌 Backend (Node.js) ===
-backend/node_modules/  # Ignore Node.js dependencies
-backend/.env           # Ignore backend environment variables
+backend/node_modules/
+backend/.env           
 
 # === 📌 Firebase / Credentials (Flutter) ===
 flutter/*.p8
@@ -66,11 +67,14 @@ flutter/assets/.env
 
 # === 📌 Generated Plugin Files (Flutter) ===
 flutter/linux/flutter/generated_plugin_registrant.cc
+flutter/linux/flutter/generated_plugin_registrant.h
 flutter/linux/flutter/generated_plugins.cmake
 flutter/macos/Flutter/GeneratedPluginRegistrant.swift
 flutter/windows/flutter/generated_plugin_registrant.cc
+flutter/windows/flutter/generated_plugin_registrant.h
 flutter/windows/flutter/generated_plugins.cmake
 flutter/.flutter-plugins
 flutter/.flutter-plugins-dependencies
 
 linux/flutter/generated_plugin_registrant.h
+flutter/linux/flutter/generated_plugin_registrant.h

@@ -13,10 +13,10 @@ packages:
     dependency: transitive
     description:
       name: args
-      sha256: bf9f5caeea8d8fe6721a9c358dd8a5c1947b27f1cfaa18b39c301273594919e6
+      sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
       url: "https://pub.dev"
     source: hosted
-    version: "2.6.0"
+    version: "2.7.0"
   async:
     dependency: transitive
     description:
@@ -58,7 +58,7 @@ packages:
     source: hosted
     version: "1.1.1"
   collection:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: collection
       sha256: a1ace0a119f20aabc852d165077c036cd864315bd99b7eaa10a60100341941bf
@@ -93,10 +93,10 @@ packages:
     dependency: transitive
     description:
       name: dart_mappable
-      sha256: f69a961ae8589724ebb542e588f228ae844c5f78028899cbe2cc718977c1b382
+      sha256: "2255b2c00e328a65fef5a8df2dabfc0dc9c2e518c33a50051a4519b1c7a28c48"
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.0"
+    version: "4.5.0"
   dio:
     dependency: "direct main"
     description:
@@ -109,10 +109,10 @@ packages:
     dependency: transitive
     description:
       name: dio_web_adapter
-      sha256: e485c7a39ff2b384fa1d7e09b4e25f755804de8384358049124830b04fc4f93a
+      sha256: "7586e476d70caecaf1686d21eee7247ea43ef5c345eab9e0cc3583ff13378d78"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   fake_async:
     dependency: transitive
     description:
@@ -228,50 +228,50 @@ packages:
     dependency: "direct main"
     description:
       name: geolocator
-      sha256: d2ec66329cab29cb297d51d96c067d457ca519dca8589665fa0b82ebacb7dbe4
+      sha256: afebc912cbe6496e8823e064ca519afb5610072bb9c4a9feea715f6feb4f7f28
       url: "https://pub.dev"
     source: hosted
-    version: "13.0.2"
+    version: "13.0.3"
   geolocator_android:
     dependency: transitive
     description:
       name: geolocator_android
-      sha256: "7aefc530db47d90d0580b552df3242440a10fe60814496a979aa67aa98b1fd47"
+      sha256: fcb1760a50d7500deca37c9a666785c047139b5f9ee15aa5469fae7dbbe3170d
       url: "https://pub.dev"
     source: hosted
-    version: "4.6.1"
+    version: "4.6.2"
   geolocator_apple:
     dependency: transitive
     description:
       name: geolocator_apple
-      sha256: "6154ea2682563f69fc0125762ed7e91e7ed85d0b9776595653be33918e064807"
+      sha256: dbdd8789d5aaf14cf69f74d4925ad1336b4433a6efdf2fce91e8955dc921bf22
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.8+1"
+    version: "2.3.13"
   geolocator_platform_interface:
     dependency: transitive
     description:
       name: geolocator_platform_interface
-      sha256: "386ce3d9cce47838355000070b1d0b13efb5bc430f8ecda7e9238c8409ace012"
+      sha256: "30cb64f0b9adcc0fb36f628b4ebf4f731a2961a0ebd849f4b56200205056fe67"
       url: "https://pub.dev"
     source: hosted
-    version: "4.2.4"
+    version: "4.2.6"
   geolocator_web:
     dependency: transitive
     description:
       name: geolocator_web
-      sha256: "2ed69328e05cd94e7eb48bb0535f5fc0c0c44d1c4fa1e9737267484d05c29b5e"
+      sha256: e54434b2ce9c677759a188d7e32e950802f79a9e9f45728239404bece0f1bd8d
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.1"
+    version: "4.1.2"
   geolocator_windows:
     dependency: transitive
     description:
       name: geolocator_windows
-      sha256: "53da08937d07c24b0d9952eb57a3b474e29aae2abf9dd717f7e1230995f13f0e"
+      sha256: "175435404d20278ffd220de83c2ca293b73db95eafbdc8131fe8609be1421eb6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.3"
+    version: "0.2.5"
   google_fonts:
     dependency: "direct main"
     description:
@@ -508,18 +508,18 @@ packages:
     dependency: transitive
     description:
       name: pub_api_client
-      sha256: "1b95df9b91bc1d5edf21a46e74b7aad64eaf33d56467781bfd8d730539a1f57d"
+      sha256: b9c0184ce4a562d8cf2ebd7be235a25aa158b7c01bdef863cccadc5894644e26
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.0"
+    version: "3.1.1"
   pub_semver:
     dependency: transitive
     description:
       name: pub_semver
-      sha256: "7b3cfbf654f3edd0c6298ecd5be782ce997ddf0e00531b9464b55245185bbbbd"
+      sha256: "5bfcf68ca79ef689f8990d1160781b4bad40a3bd5e5218ad4076ddb7f4081585"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.5"
+    version: "2.2.0"
   pub_update_checker:
     dependency: transitive
     description:
@@ -540,10 +540,10 @@ packages:
     dependency: "direct main"
     description:
       name: shared_preferences
-      sha256: "846849e3e9b68f3ef4b60c60cf4b3e02e9321bc7f4d8c4692cf87ffa82fc8a3a"
+      sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.2"
+    version: "2.5.3"
   shared_preferences_android:
     dependency: transitive
     description:
@@ -689,10 +689,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_android
-      sha256: "6fc2f56536ee873eeb867ad176ae15f304ccccc357848b351f6f0d8d4a40d193"
+      sha256: "1d0eae19bd7606ef60fe69ef3b312a437a16549476c42321d5dc1506c9ca3bf4"
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.14"
+    version: "6.3.15"
   url_launcher_ios:
     dependency: transitive
     description:
@@ -769,10 +769,10 @@ packages:
     dependency: transitive
     description:
       name: web
-      sha256: cd3543bd5798f6ad290ea73d210f423502e71900302dde696f8bff84bf89a1cb
+      sha256: "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   wkt_parser:
     dependency: transitive
     description:
