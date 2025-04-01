@@ -60,12 +60,12 @@ Widget buildMap(
         userAgentPackageName: 'com.h2g0.app',
         tileProvider: CancellableNetworkTileProvider(),
       ),
+      PolylineLayer(
+        polylines: polylines,
+      ),
       MarkerLayer(
         markers: markers,
         rotate: true,
-      ),
-      PolylineLayer(
-        polylines: polylines,
       ),
       if (!kIsWeb) CurrentLocationLayer(
         alignPositionStream: alignposstream.stream,
@@ -99,6 +99,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final List<Polyline> _polylines = [];
   late AlignOnUpdate _alignPositionOnUpdate;
   late final StreamController<double?> _alignPositionStreamController;
+  Map<String, dynamic> navList = {
+    'start': null,
+    'startname': null,
+    'dest': null,
+    'destname': null,
+    'nav': null
+  };
 
   List<Place> placesList = [];
   Map<String, dynamic> _selectedMetadata = {
@@ -113,7 +120,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   MarkerState? _selectedMarker;
   List<Marker> _filteredmarkers = [];
   List<dynamic> filters = [false, false, false, 0.0, FountainLocation.EITHER, false, 0.0];
-  List<ListTile> _directionTiles = [];
+  List<Widget> _directionTiles = [];
 
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -285,7 +292,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
     MarkerState? previousMarker = _selectedMarker;
 
-
     MarkerState updatedMarker = MarkerState(
       width: 40,
       height: 40,
@@ -315,7 +321,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       _selectedMarker = mark;
       _filteredmarkers[updatedMarker.listPos] = updatedMarker;
       if(kIsWeb) _key.currentState!.openDrawer();
-      if (previousMarker != null && _selectedMarker != previousMarker && previousMarker.metadata['name'] != "Dropped Pin") {
+      if (previousMarker != null && _selectedMarker != previousMarker && mark != _selectedMarker && previousMarker.metadata['name'] != "Dropped Pin") {
         MarkerState returnMarker = MarkerState(
           width: 40,
           height: 40,
@@ -396,7 +402,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
     Map<String, dynamic> metadata = {
       'name': 'Dropped Pin',
-      'address': 'Searched Address'
+      'address': address
     };
 
     _filteredmarkers.add(
@@ -420,29 +426,82 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
     setState(() => _posAdded = true);
   }
+  
+  void directionPreamble(String dest) {
+    _directionTiles.add(
+        SizedBox(height: 16,)
+      );
+      _directionTiles.add(
+        ListTile(
+          leading: Icon(Icons.location_pin),
+          title: Text("Destination: $dest")
+        )
+      );
+      _directionTiles.add(
+        SizedBox(height: 16,)
+      );
+      _directionTiles.add(
+        Divider()
+      );
+      _directionTiles.add(
+        SizedBox(height: 16,)
+      );
+      _directionTiles.add(
+        Row(
+          children: [
+              SizedBox(width: 16,),
+              ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromARGB(255, 176, 0, 32),
+                foregroundColor: Colors.white
+              ),
+              onPressed: () {
+                clearDirections();
+                applyFilters(facility);
+                addDroppedPin();
+                
+                //closeBottomSheet();
+              },
+              icon: Icon(Icons.close, color: Colors.white,),
+              label: Text("Clear Navigation", ),),
+            ],
+        ),
+      );
+      _directionTiles.add(
+        SizedBox(height: 16,)
+      );
+      _directionTiles.add(
+        Divider()
+      );
+      _directionTiles.add(
+        SizedBox(height: 16,)
+      );
+  }
 
-  void pruneDirections(List<dynamic> directions) {
+  void pruneDirections(List<dynamic> directions, String dest) {
     _directionTiles.clear();
     setState(() {
+      directionPreamble(dest);
       for (int i = 0; i < directions.length; i++)
       {
-        if (!(directions[i]['street_name'] == ""))
+        if (!(directions[i]['street_name'] == "" && !(directions[i]['text'] as String).contains("Arrive")))
         {
-          Icon icon;
+          Icon icon = Icon(Icons.check);
           if((directions[i]['text'] as String).contains("sharp left")) {icon = Icon(Icons.turn_sharp_left);}
           else if((directions[i]['text'] as String).contains("slight left")) {icon = Icon(Icons.turn_slight_left);}
-          else if((directions[i]['text'] as String).contains("left")) {icon = Icon(Icons.turn_left);}
-          else if((directions[i]['text'] as String).contains("sharp right")) {icon = Icon(Icons.turn_sharp_left);}
-          else if((directions[i]['text'] as String).contains("slight right")) {icon = Icon(Icons.turn_slight_left);}
-          else if((directions[i]['text'] as String).contains("right")) {icon = Icon(Icons.turn_left);}
-          else if((directions[i]['text'] as String).contains("Left")) {icon = Icon(Icons.turn_left);}
+          else if((directions[i]['text'] as String).contains("Turn left")) {icon = Icon(Icons.turn_left);}
+          else if((directions[i]['text'] as String).contains("sharp left")) {icon = Icon(Icons.turn_sharp_left);}
+          else if((directions[i]['text'] as String).contains("slight right")) {icon = Icon(Icons.turn_slight_right);}
+          else if((directions[i]['text'] as String).contains("Turn right")) {icon = Icon(Icons.turn_right);}
+          else if((directions[i]['text'] as String).contains("sharp right")) {icon = Icon(Icons.turn_sharp_right);}
+          else if((directions[i]['text'] as String).contains("Arrive")) {icon = Icon(Icons.check);}
           else {icon = Icon(Icons.arrow_upward);}
           
           _directionTiles.add(
             ListTile(
               leading: icon,
-              title: Text(directions[i]['text']),
-              subtitle: Text(directions[i]['street_name']),
+              title: Text("In ${(directions[i]['distance'] as double).toInt()} meters, ${directions[i]['text']}"),
+              //subtitle: Text(directions[i]['street_name']),
             )
           );
         }
@@ -450,16 +509,19 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
-  void getDirections(LatLng source, LatLng destination) async {
+  void getDirections(LatLng source, LatLng destination, String destname) async {
     String baseURL = "https://graphhopper.com/api/1/route";
     String sourcePos = "${source.latitude},${source.longitude}";
     String destinationPos = "${destination.latitude},${destination.longitude}";
     String? key = widget.graphapikey;
 
-    String request = '$baseURL?profile=foot&point=$sourcePos&point=$destinationPos&locale=en&points_encoded=false&key=$key';
+    String request = '$baseURL?profile=bike&point=$sourcePos&point=$destinationPos&locale=en&points_encoded=false&key=$key';
     Response response = await Dio().get(request);
     List<dynamic> points = response.data['paths'][0]['points']['coordinates'];
-    pruneDirections(response.data['paths'][0]['instructions']);
+    pruneDirections(response.data['paths'][0]['instructions'], destname);
+    navList['start'] = source;
+    navList['dest'] = destination;
+    navList['nav'] = _directionTiles;
     List<LatLng> coords = [];
     for (dynamic cord in points) {
       coords.add(LatLng(cord[1], cord[0]));
@@ -740,6 +802,9 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void clearDirections() {
+    navList['start'] = null;
+    navList['dest'] = null;
+    navList['nav'] = null;
     setState(() {
       _directionTiles.clear();
       _polylines.clear();
@@ -756,6 +821,9 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     final theme = Theme.of(context);
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     String? selectedID;
+    List<bool> bools = [kIsWeb, _selectedMarker != null, navList['dest']!=null && navList['nav'].isNotEmpty];
+    int numTabs = bools.where((x) => x == true).length;
+
     return Scaffold(
       key: _key,
       onDrawerChanged:(isOpened) {
@@ -763,11 +831,12 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           if (!(_selectedMarker!.metadata['name'] == "Dropped Pin")) clearSelectedMarker();
         }
       },
+      drawerScrimColor: Colors.transparent,
       drawer: Drawer(
         width: (kIsWeb) ? 500 : 300,
         child: DefaultTabController(
           initialIndex: (kIsWeb && _selectedMarker != null) ? 1 : 0,
-          length: (kIsWeb && _selectedMarker != null) ? 2 : 1, 
+          length: numTabs, 
           child: Scaffold(
             appBar: PreferredSize(
             preferredSize: Size.fromHeight(kToolbarHeight+18),
@@ -780,7 +849,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                       tabs: [
                         const Tab(icon: Icon(Icons.filter_alt), text: "Filter"),
                         if (kIsWeb && _selectedMarker != null) const Tab(icon: Icon(Icons.location_on), text: "Selected",),
-                        //if (kIsWeb && _polylines.isNotEmpty) const Tab(icon: Icon(Icons.directions), text: "Navigation")
+                        if (kIsWeb && navList['dest']!=null && navList['nav'].isNotEmpty) const Tab(icon: Icon(Icons.directions), text: "Navigation")
                       ],
                     ),
                   ],
@@ -966,16 +1035,17 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                if (_selectedMarker!.metadata['name'] != "Dropped Pin") ElevatedButton.icon(
+                                if (_selectedMarker!.metadata['name'] != "Dropped Pin" && navList['dest']!=_selectedMarker?.point) ElevatedButton.icon(
                                 onPressed: () {
                                     if (!kIsWeb) {
                                       getLocation().then((value) {
-                                      getDirections(value, _selectedMarker!.point);
+                                      getDirections(value, _selectedMarker!.point, _selectedMarker!.metadata['name']);
                                     });
                                     }
                                     else {
                                       if (_posAdded) {
-                                        getDirections(droppedCoords!, _selectedMarker!.point);
+                                        getDirections(droppedCoords!, _selectedMarker!.point, _selectedMarker!.metadata['name']);
+                                        
                                       }
                                       else {
                                         showDialog<String>(
@@ -1000,8 +1070,25 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                                     }
                                 },
                                 icon: Icon(Icons.directions),
-                                label: Text("Directions"),),
-                                if (_selectedMarker!.metadata['name'] == "Dropped Pin")ElevatedButton.icon(
+                                label: Text("Directions"),
+                                ),
+
+                                if (_selectedMarker!.metadata['name'] != "Dropped Pin" && navList['dest']==_selectedMarker?.point) ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Color.fromARGB(255, 176, 0, 32),
+                                    foregroundColor: Colors.white
+                                  ),
+                                onPressed: () {
+                                  clearDirections();
+                                  applyFilters(facility);
+                                  addDroppedPin();
+                                  
+                                  //closeBottomSheet();
+                                },
+                                icon: Icon(Icons.close, color: Colors.white,),
+                                label: Text("Clear Navigation", ),),
+
+                                if (_selectedMarker!.metadata['name'] == "Dropped Pin") ElevatedButton.icon(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Color.fromARGB(255, 176, 0, 32),
                                     foregroundColor: Colors.white
@@ -1013,7 +1100,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                                   //closeBottomSheet();
                                 },
                                 icon: Icon(Icons.close, color: Colors.white,),
-                                label: Text("Remove Pin", ),),]
+                                label: Text("Remove Pin", ),),
+                                ]
                     
                             ),
                             const SizedBox(height: 16),
@@ -1040,6 +1128,11 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
+                ),
+                if (kIsWeb && navList['dest']!=null) Container(
+                  child: ListView(
+                    children: navList['nav'],
+                  )
                 )
               ]
               )
@@ -1079,7 +1172,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     onDirections: () async {
                       if (await Geolocator.isLocationServiceEnabled()) {
                         getLocation().then((value) {
-                        getDirections(value, _selectedMarker!.point);
+                        getDirections(value, _selectedMarker!.point, _selectedMarker!.metadata['name']);
                       }); 
                       }
                     },
@@ -1153,6 +1246,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                           _controller.query = place.address;
                           _controller.close();
                           getLatLng(selectedID!, place.address);
+                          clearDirections();
+                          clearSelectedMarker();
                         },
                       );
                     }).toList(),
