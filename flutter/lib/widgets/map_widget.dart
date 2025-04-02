@@ -868,7 +868,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     if (filters[6] != 0 && !kIsWeb && isLocationEnabled && position != null) {
         _filteredmarkers = _filteredmarkers.where((marker) => (getDistance(position!, (marker as MarkerState).point) <= filters[6]*1000)).toList();
         _circles.add(
-          CircleMarker(point: droppedCoords!, radius: filters[6]*1000, useRadiusInMeter: true, color: Color.fromARGB(100, 65,107,223))
+          CircleMarker(point: position!, radius: filters[6]*1000, useRadiusInMeter: true, color: Color.fromARGB(100, 65,107,223))
         );
     }
     if (filters[6] != 0 && kIsWeb && _posAdded) {
