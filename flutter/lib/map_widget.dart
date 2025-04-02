@@ -325,6 +325,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
   void selectedAMarker(Marker marker) {
     MarkerState mark = marker as MarkerState;
+    bool dontSheet = false;
     int index = _filteredmarkers.indexOf(marker);
     if (mark.metadata['name'] == "Dropped Pin") {
       setState(() {
@@ -334,21 +335,20 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       });
       return;
     }
+
     MarkerState? previousMarker = _selectedMarker;
 
     String image = "";
 
-    if (mark.facilityType == Type.WASHROOM)
-      {
+    if (mark.facilityType == Type.WASHROOM) {
         image = 'assets/images/ToiletIcon_final';
-      }
-      else if (mark.facilityType == Type.FOUNTAIN)
-      {
-        image = 'assets/images/FountainIcon_final';
-      }
-      else {
-        image = 'assets/images/CommunityCentreIcon';
-      }
+    }
+    else if (mark.facilityType == Type.FOUNTAIN) {
+      image = 'assets/images/FountainIcon_final';
+    }
+    else {
+      image = 'assets/images/CommunityCentreIcon';
+    }
 
     MarkerState updatedMarker = MarkerState(
       width: 50,
@@ -367,12 +367,18 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       listPos: index);
 
     setState(() {
-      
-
       _selectedMarker = mark;
       _filteredmarkers[updatedMarker.listPos] = updatedMarker;
       if(kIsWeb) _key.currentState!.openDrawer();
-      if (previousMarker != null && _selectedMarker != previousMarker && mark != _selectedMarker && previousMarker.metadata['name'] != "Dropped Pin") {
+      
+      if (previousMarker != null && _selectedMarker?.point == previousMarker.point)
+      {
+        clearSelectedMarker();
+        if (!kIsWeb) closeBottomSheet();
+        dontSheet = true;
+      }
+      else if (previousMarker != null && _selectedMarker != previousMarker && previousMarker.metadata['name'] != "Dropped Pin") {
+
         if (previousMarker.facilityType == Type.WASHROOM)
         {
           image = 'assets/images/ToiletIcon_final';
@@ -384,6 +390,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         else {
           image = 'assets/images/CommunityCentreIcon';
         }
+        
         MarkerState returnMarker = MarkerState(
           width: 50,
           height: 50,
@@ -407,7 +414,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         _filteredmarkers[previousMarker.listPos] = returnMarker;
       }
     });
-    if (!kIsWeb) _handlePinTap(mark.metadata);
+    if (!kIsWeb && !dontSheet) _handlePinTap(mark.metadata);
   }
 
   void clearSelectedMarker() {
@@ -515,10 +522,10 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
               ),
               onPressed: () {
                 clearDirections();
-                applyFilters(facility);
+                //applyFilters(facility);
                 addDroppedPin();
                 
-                //closeBottomSheet();
+                //if (!kIsWeb) closeBottomSheet();
               },
               icon: Icon(Icons.close, color: Colors.white,),
               label: Text("Clear Navigation", ),),
@@ -943,6 +950,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     String? selectedID;
     List<bool> bools = [kIsWeb, _selectedMarker != null, navList['dest']!=null && navList['nav'].isNotEmpty];
     int numTabs = bools.where((x) => x == true).length;
+    if (!kIsWeb) numTabs = 1;
 
     return Scaffold(
       key: _key,
@@ -1408,12 +1416,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 maxChildSize: 0.8,
                 expand: false,
                 snap: true,
-                snapSizes: [0.1, 0.3, 0.8],
+                snapSizes: [0.2, 0.3, 0.8],
                 builder: (context, scrollController) {
                   return bottom_bar(
                     metadata: _selectedMetadata,
-                    type: _selectedMarker!.facilityType,
+                    type: _selectedMarker?.facilityType,
                     scrollController: scrollController,
+                    navList: navList,
                     onDirections: () async {
                       if (await Geolocator.isLocationServiceEnabled()) {
                         getLocation().then((value) {
