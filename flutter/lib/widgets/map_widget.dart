@@ -690,7 +690,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     List<Marker> tempMarkers = List<Marker>.from(_markers);
     tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.WASHROOM).toList(); // Make only washroom markers visible
     setState(() {
-      
+      _circles.clear();
       _filteredmarkers.clear();
       int mark = 0;
       for (Marker marker in tempMarkers) {
@@ -725,7 +725,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       if (_posAdded) {
         _posAdded = false;
         addDroppedPin();
-      }
+      }  
     }
     );
   }
@@ -735,6 +735,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         List<Marker> tempMarkers = List<Marker>.from(_markers);
         tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.FOUNTAIN).toList();
         _filteredmarkers.clear();
+        _circles.clear();
         for (int i = 0; i < tempMarkers.length; i++) {
           int loc = i;
           _filteredmarkers.add(
@@ -765,6 +766,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           _posAdded = false;
           addDroppedPin();
         }
+
       }
     );
   }
@@ -774,6 +776,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         List<Marker> tempMarkers = List<Marker>.from(_markers);
         tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.ARTS).toList();
         _filteredmarkers.clear();
+        _circles.clear();
         for (int i = 0; i < tempMarkers.length; i++) {
           int loc = i;
           _filteredmarkers.add(

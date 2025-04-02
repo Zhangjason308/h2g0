@@ -1,4 +1,4 @@
-package com.example.h2g0
+package com.carleton.h2g0
 
 import io.flutter.embedding.android.FlutterActivity
 
