@@ -10,6 +10,7 @@ import 'widgets/app_bar.dart';
 import 'widgets/tutorial_widget.dart';
 import 'widgets/about_us_widget.dart';
 import 'widgets/contact_widget.dart';
+import 'widgets/form_widget.dart';
 import 'theme/app_theme.dart';
 
 const String apiKey = String.fromEnvironment('PLACES_API_KEY');
@@ -103,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
           graphapikey: graphapikey,
           washroomLocations: washroomLocations,
           waterFountainLocations: waterFountainLocations,
-          artsCultureLocations:  artsCultureLocations// Add empty list for now since we're not using water fountains yet
+          artsCultureLocations: artsCultureLocations,
         );
       case 'Tutorial':
         return TutorialWidget(
@@ -115,7 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         );
       case 'Submission Form':
-        return Center(child: Text("Submission Form Page"));
+        return const FormWidget();
       case 'About Us':
         return const AboutUsWidget();
       case 'Contact':

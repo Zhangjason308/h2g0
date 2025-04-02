@@ -1,154 +1,266 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-const List<String> listType = <String>['Washroom', 'Water fountain'];
-const List<String> listProblem = <String>[
-  'Innacurate Information',
-  'H2G0 Application is broken',
-  'Facility has been damaged',
-  'Other'
-];
+import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 class FormWidget extends StatefulWidget {
   const FormWidget({super.key});
 
   @override
-  State<FormWidget> createState() => _FormState();
+  State<FormWidget> createState() => _FormWidgetState();
 }
 
-class _FormState extends State<FormWidget> {
+class _FormWidgetState extends State<FormWidget> {
   final _formKey = GlobalKey<FormState>();
-  late FocusNode formFocusNode;
-  final formController = TextEditingController();
-  String facilityTypeValue = listType.first;
-  String facilityProblemValue = listProblem.first;
-
-  @override
-  void initState() {
-    super.initState();
-    formFocusNode = FocusNode();
-  }
+  final _nameController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  bool _isAccessible = false;
+  bool _hasBabyChange = false;
+  bool _isGenderNeutral = false;
 
   @override
   void dispose() {
-    formFocusNode.dispose();
-    formController.dispose();
+    _nameController.dispose();
+    _addressController.dispose();
+    _descriptionController.dispose();
     super.dispose();
-  }
-
-  Future<void> submitForm(
-      String date, String address, String description) async {
-    final url = Uri.parse('BACKEND URL GOES HERE /api/userSubmission');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'facilityType': facilityTypeValue,
-          'problem': facilityProblemValue,
-          'description': description,
-          'date': date,
-          'address': address,
-        }),
-      );
-      if (mounted) {
-        if (response.statusCode == 200) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Thank you for the feedback!')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'Failed to submit. Please try again or reach out through the contact page.')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Please try again later.')),
-        );
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Report An Issue')),
-      body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryLight,
+                  AppTheme.primaryDark,
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
             child: Column(
               children: [
-                Text('Facility Type:'),
-                DropdownButton<String>(
-                  autofocus: true,
-                  value: facilityTypeValue,
-                  icon: const Icon(Icons.arrow_downward),
-                  onChanged: (String? value) {
-                    setState(() {
-                      facilityTypeValue = value!;
-                    });
-                  },
-                  items: listType.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-                Text('Problem:'),
-                DropdownButton<String>(
-                  autofocus: false,
-                  value: facilityProblemValue,
-                  icon: const Icon(Icons.arrow_downward),
-                  onChanged: (String? value) {
-                    setState(() {
-                      facilityProblemValue = value!;
-                    });
-                  },
-                  items:
-                      listProblem.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-                Text('Problem Description:'),
-                TextFormField(
-                  autofocus: false,
-                  controller: formController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a description of the issue';
-                    }
-                    return null;
-                  },
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Explanation of Issue and additional details...',
+                Text(
+                  'Submit a Location',
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        submitForm(DateTime.now().toIso8601String(),
-                            'need address var here', formController.text);
-                      }
-                    },
-                    child: const Text('Submit'),
+                const SizedBox(height: 16),
+                Text(
+                  'Help us make public washrooms more accessible',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    color: Colors.white.withAlpha(230),
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
-          )),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Location Details',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.tabText,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    controller: _nameController,
+                    label: 'Location Name',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the location name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _addressController,
+                    label: 'Address',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the address';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _descriptionController,
+                    label: 'Additional Details',
+                    maxLines: 3,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please provide additional details';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Accessibility Features',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.tabText,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildCheckbox(
+                    title: 'Wheelchair Accessible',
+                    value: _isAccessible,
+                    onChanged: (value) {
+                      setState(() {
+                        _isAccessible = value ?? false;
+                      });
+                    },
+                  ),
+                  _buildCheckbox(
+                    title: 'Baby Change Station',
+                    value: _hasBabyChange,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasBabyChange = value ?? false;
+                      });
+                    },
+                  ),
+                  _buildCheckbox(
+                    title: 'Gender Neutral',
+                    value: _isGenderNeutral,
+                    onChanged: (value) {
+                      setState(() {
+                        _isGenderNeutral = value ?? false;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          // TODO: Implement form submission
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Location submitted successfully!')),
+                          );
+                          _nameController.clear();
+                          _addressController.clear();
+                          _descriptionController.clear();
+                          setState(() {
+                            _isAccessible = false;
+                            _hasBabyChange = false;
+                            _isGenderNeutral = false;
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryDark,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Submit Location',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: AppTheme.tabText.withAlpha(204)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppTheme.tabText.withAlpha(51)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppTheme.tabText.withAlpha(51)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppTheme.primaryDark),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildCheckbox({
+    required String title,
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppTheme.primaryDark,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: AppTheme.tabText,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
