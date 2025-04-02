@@ -540,6 +540,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     _directionTiles.clear();
     setState(() {
       directionPreamble(dest);
+      int prevDis = 0;
       for (int i = 0; i < directions.length; i++)
       {
         if (!(directions[i]['street_name'] == "" && !(directions[i]['text'] as String).contains("Arrive")))
@@ -558,10 +559,11 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           _directionTiles.add(
             ListTile(
               leading: icon,
-              title: Text("In ${(directions[i]['distance'] as double).toInt()} meters, ${directions[i]['text']}"),
+              title: Text("In $prevDis meters, ${directions[i]['text']}"),
               //subtitle: Text(directions[i]['street_name']),
             )
           );
+          prevDis = (directions[i]['distance'] as double).toInt();
         }
       }
     });
