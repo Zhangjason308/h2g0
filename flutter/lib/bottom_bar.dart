@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:h2g0/models/marker_state.dart';
 
 class bottom_bar extends StatelessWidget {
   final Map<String, dynamic> metadata;
+  final Type type;
   final ScrollController scrollController;
   final VoidCallback onClose;
   final VoidCallback onDirections;
@@ -10,6 +12,7 @@ class bottom_bar extends StatelessWidget {
   const bottom_bar({
     super.key,
     required this.metadata,
+    required this.type,
     required this.scrollController,
     required this.onClose, 
     required this.onDirections,
