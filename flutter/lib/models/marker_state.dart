@@ -1,6 +1,6 @@
 import 'package:flutter_map/flutter_map.dart';
 
-enum Type {WASHROOM, FOUNTAIN, COMBO}
+enum Type {WASHROOM, FOUNTAIN, COMBO, ARTS}
 
 
 class MarkerState extends Marker {

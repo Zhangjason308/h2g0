@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'map_widget.dart';
+import 'widgets/map_widget.dart';
 import 'widgets/app_bar.dart';
 import 'widgets/tutorial_widget.dart';
 import 'widgets/about_us_widget.dart';
@@ -95,14 +95,15 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Widget _buildBody(String tab, List washroomLocations, List waterFountainLocations) {
+  Widget _buildBody(String tab, List washroomLocations, List waterFountainLocations, List artsCultureLocations) {
     switch (tab) {
       case 'Map':
         return MapWidget(
           placesAPIKey: placesAPIKey,
           graphapikey: graphapikey,
           washroomLocations: washroomLocations,
-          waterFountainLocations: waterFountainLocations, // Add empty list for now since we're not using water fountains yet
+          waterFountainLocations: waterFountainLocations,
+          artsCultureLocations:  artsCultureLocations// Add empty list for now since we're not using water fountains yet
         );
       case 'Tutorial':
         return TutorialWidget(
@@ -160,7 +161,8 @@ class _MyHomePageState extends State<MyHomePage> {
           } else if (snapshot.hasData) {
             final washroomLocations = snapshot.data!['washroomLocations'];
             final waterFountainLocations = snapshot.data!['fountainLocations'];
-            body = _buildBody(selectedTab, washroomLocations, waterFountainLocations);
+            final artsCultureLocations = snapshot.data!['artsAndCultureLocations'];
+            body = _buildBody(selectedTab, washroomLocations, waterFountainLocations, artsCultureLocations);
           } else {
             body = const Center(child: Text('No data available'));
           }
