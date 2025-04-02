@@ -48,6 +48,8 @@ dependencies:
   geolocator: ^13.0.2
   flutter_dotenv: ^5.2.1
   collection: ^1.19.0
+  screenshot: ^3.0.0
+  pdf: ^3.11.3
 
 dev_dependencies:
   flutter_test:

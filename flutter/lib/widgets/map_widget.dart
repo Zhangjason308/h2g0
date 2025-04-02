@@ -43,6 +43,7 @@ Widget buildMap(
   BuildContext context,
   List<Marker> markers,
   List<Polyline> polylines,
+  List<CircleMarker> circles,
   bool posAdded,
   MarkerState? selectedMarker, 
   StreamController<double?> alignposstream, 
@@ -62,6 +63,9 @@ Widget buildMap(
         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         userAgentPackageName: 'com.h2g0.app',
         tileProvider: CancellableNetworkTileProvider(),
+      ),
+      CircleLayer(
+        circles: circles
       ),
       PolylineLayer(
         polylines: polylines,
@@ -100,6 +104,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   final Map<LatLng, Map<String, dynamic>> _markerMetadata = {};
   final List<Marker> _markers = [];
   final List<Polyline> _polylines = [];
+  final List<CircleMarker> _circles = [];
   late AlignOnUpdate _alignPositionOnUpdate;
   late final StreamController<double?> _alignPositionStreamController;
   Map<String, dynamic> navList = {
@@ -824,6 +829,10 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
 
     if (_posAdded) {_filteredmarkers.removeLast();}
 
+    setState(() {
+      _circles.clear();
+    });
+
     if (DeepCollectionEquality().equals(filters,[false, false, false, 0.0, FountainLocation.EITHER, false, 0.0, "All"])) {
       addDroppedPin();
       return;} // if no filters were applied
@@ -851,18 +860,22 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       if (filters[5]) _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['yearround'] == "Yes").toList();
     }
     else if (facilityType == SelectedFacilitiy.ARTS) {
-      if (filters[7] != "All") {
-        print("Here!> ${filters[7]}");
-        
+      if (filters[7] != "All") {        
         _filteredmarkers = _filteredmarkers.where((marker) => (marker as MarkerState).metadata['buildingtype'].toString().contains(filters[7].toString())).toList();
       }
     }
 
     if (filters[6] != 0 && !kIsWeb && isLocationEnabled && position != null) {
         _filteredmarkers = _filteredmarkers.where((marker) => (getDistance(position!, (marker as MarkerState).point) <= filters[6]*1000)).toList();
+        _circles.add(
+          CircleMarker(point: droppedCoords!, radius: filters[6]*1000, useRadiusInMeter: true, color: Color.fromARGB(100, 65,107,223))
+        );
     }
     if (filters[6] != 0 && kIsWeb && _posAdded) {
       _filteredmarkers = _filteredmarkers.where((marker) => (getDistance(droppedCoords!, (marker as MarkerState).point) <= filters[6]*1000)).toList();
+      _circles.add(
+          CircleMarker(point: droppedCoords!, radius: filters[6]*1000, useRadiusInMeter: true, color: Color.fromARGB(100, 65,107,223))
+        );
     }
     });
 
@@ -917,6 +930,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
 
     setState(() {
+      _circles.clear();
       filters = [false, false, false, 0.0, FountainLocation.EITHER, false, 0.0, "All"];
     });
   }
@@ -1403,7 +1417,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                 setState(() => _isBottomSheetVisible = false);
               }
             },
-            child: buildMap(_animatedMapController, context, _filteredmarkers, _polylines, _posAdded, _selectedMarker, _alignPositionStreamController, _alignPositionOnUpdate, _handlePinTap, _markerMetadata),
+            child: buildMap(_animatedMapController, context, _filteredmarkers, _polylines, _circles, _posAdded, _selectedMarker, _alignPositionStreamController, _alignPositionOnUpdate, _handlePinTap, _markerMetadata),
           ),
 
           if (_isBottomSheetVisible && !kIsWeb)

@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'map_widget.dart';
+import 'widgets/map_widget.dart';
 import 'widgets/app_bar.dart';
 import 'widgets/tutorial_widget.dart';
 import 'widgets/about_us_widget.dart';
