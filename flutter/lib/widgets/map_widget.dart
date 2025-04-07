@@ -955,10 +955,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
-  void generateDirectionTile(String distance, String name, String direction) 
-  {
-  }
-
   SelectedFacilitiy? facility = SelectedFacilitiy.WASHROOM;
   @override
   Widget build(BuildContext context) {
@@ -1205,7 +1201,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     ),
                     Slider(
                       value: filters[6],
-                      max: 50,
+                      max: 10,
                       divisions: 20,
                       label: filters[6].toStringAsFixed(1),
                       onChanged: (double value) {
