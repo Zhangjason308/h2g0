@@ -1,16 +1,16 @@
 # h2g0
+A water resources app that consolitdates washroom and water fountain data in Ottawa into one app.
+The app is intended as a place that anyone looking for a washroom or fountain can use, regardless
+of where they are, as long as they have access to some device, whether it be a library computer
+or their own phone.
 
-A new Flutter project.
+This app was made in collaboration with City Studio Ottawa, and was done as a Capstone Project
+as part of Carleton University's Engineering program.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Members
+The members of the group are:
+- Jason Zhang
+- Caleb Lui-Yee
+- Triton Crowley
+- Eric Wang
+- Marwan Zeid
