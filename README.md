@@ -14,3 +14,8 @@ The members of the group are:
 - Triton Crowley
 - Eric Wang
 - Marwan Zeid
+
+## General Technical Overview
+This app was made using [Flutter](https://flutter.dev/). The backing database holding facility information is powered by [MongoDB](https://www.mongodb.com/).
+The map itself is [OpenStreetMap](https://www.openstreetmap.org/about), autocomplete functionality is powered by [Google Places API](https://developers.google.com/maps/documentation/places/web-service/overview), and navigation is
+powered by [GraphHopper](https://www.graphhopper.com/)
