@@ -38,6 +38,7 @@ class MapWidget extends StatefulWidget {
   State<MapWidget> createState() => _MapWidget();
 }
 
+// builds the map itself, with markers and directions
 Widget buildMap(
   AnimatedMapController mapcontroller,
   BuildContext context,
@@ -137,20 +138,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     cancelPreviousAnimations: true,
   );
 
-  void _handlePinTap(Map<String, dynamic> metadata) {
-    setState(() {
-      _selectedMetadata = metadata;
-      _isBottomSheetVisible = true;
-    });
-
-    Future.delayed(Duration(milliseconds: 100), () {
-      _bottomSheetController.animateTo(
-        0.3,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
+  
   @override
   void dispose() {
     _controller.dispose();
@@ -158,6 +146,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     super.dispose();
   }
 
+// initializes the list of markers
   @override
   void initState() {
     super.initState();
@@ -305,7 +294,24 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   // Functions
-  
+
+// function that handles pin taps on mobile.
+  void _handlePinTap(Map<String, dynamic> metadata) {
+    setState(() {
+      _selectedMetadata = metadata;
+      _isBottomSheetVisible = true;
+    });
+
+    Future.delayed(Duration(milliseconds: 100), () {
+      _bottomSheetController.animateTo(
+        0.3,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+// helper function, removes the dropped pin.
   void clearDroppedPin() {
     if (_posAdded) {
       setState(() {
@@ -318,6 +324,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
   }
 
+// helper function, readds the dropped pin if there was one after map refresh
   void addDroppedPin() {
     if (droppedCoords!=null)
     {
@@ -328,6 +335,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     }
   }
 
+// selects a marker (saves it to selected and updates its icon. Also pops open the drawer on browser or bottombar on mobile)
   void selectedAMarker(Marker marker) {
     MarkerState mark = marker as MarkerState;
     bool dontSheet = false;
@@ -422,6 +430,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     if (!kIsWeb && !dontSheet) _handlePinTap(mark.metadata);
   }
 
+// unselects a selected marker (essentially just removes the marker from selected and resets its icon)
   void clearSelectedMarker() {
     setState(() {
       if (_selectedMarker != null)
@@ -465,6 +474,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
+// adds a marker to the map (primarily for location marker from search)
   void addMarker(LatLng coordinates, String address, bool removeLast) {
     if (_posAdded && _filteredmarkers.isNotEmpty && removeLast) {
       _filteredmarkers.removeLast();
@@ -497,6 +507,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     setState(() => _posAdded = true);
   }
   
+// split off from pruneDirections, creates the top of the navigation list which includes destination, and a few buttons
   void directionPreamble(String dest) {
     _directionTiles.add(
         SizedBox(height: 16,)
@@ -548,6 +559,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       );
   }
 
+// parses through directions information from graphhopper and generates readable steps
   void pruneDirections(List<dynamic> directions, String dest) {
     _directionTiles.clear();
     setState(() {
@@ -581,6 +593,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
+// get directions from source to destination, this prints the lines on the map and calls a function to produce direction tiles
   void getDirections(LatLng source, LatLng destination, String destname) async {
     String baseURL = "https://graphhopper.com/api/1/route";
     String sourcePos = "${source.latitude},${source.longitude}";
@@ -611,11 +624,13 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
+// get current position (limited to mobile)
   Future<LatLng> getLocation() async {
     Position? position = await Geolocator.getLastKnownPosition();
     return LatLng(position!.latitude, position!.longitude);
   }
 
+// get list of strings that could autocomplete from input
   void getResults(String input) async {
     String baseURL =
         'https://maps.googleapis.com/maps/api/place/autocomplete/json';
@@ -646,6 +661,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
+// get latitude and longitude of an address
   void getLatLng(String placeId, String address) async {
     if (placeId.isEmpty) {
       return;
@@ -683,9 +699,9 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
         _posAdded = true;
       });
     }
-    
-}
+  }
 
+//view all washroom markers 
   void viewWashrooms() async {
     List<Marker> tempMarkers = List<Marker>.from(_markers);
     tempMarkers = tempMarkers.where((marker) => (marker as MarkerState).facilityType == Type.WASHROOM).toList(); // Make only washroom markers visible
@@ -730,6 +746,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     );
   }
 
+//view all fountain markers
   void viewFountains() {
     setState(() {
         List<Marker> tempMarkers = List<Marker>.from(_markers);
@@ -771,6 +788,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     );
   }
 
+// view all arts markers
   void viewArts() {
     setState(() {
         List<Marker> tempMarkers = List<Marker>.from(_markers);
@@ -811,6 +829,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     );
   }
 
+// get distance between two points
   double getDistance(LatLng point1, LatLng point2)
   {
     var p = 0.017453292519943295;
@@ -822,6 +841,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     return radiusOfEarth * 2 * asin(sqrt(a)) * 1000;
   }
 
+  //apply filters based on selected filters
   void applyFilters(SelectedFacilitiy? facilityType) async {
     
     if (facilityType == SelectedFacilitiy.WASHROOM) {
@@ -955,10 +975,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
     });
   }
 
-  void generateDirectionTile(String distance, String name, String direction) 
-  {
-  }
-
   SelectedFacilitiy? facility = SelectedFacilitiy.WASHROOM;
   @override
   Widget build(BuildContext context) {
@@ -989,7 +1005,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
               child: SafeArea(
                 child: Column(
                   children: <Widget>[
-                    //Expanded(child: new Container()),
                     TabBar(
                       tabs: [
                         const Tab(icon: Icon(Icons.filter_alt), text: "Filter"),
@@ -1073,7 +1088,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                                                                   },
                                                                 ),
 
-                    //-------------------------------------- Fountains Filters
+                    //---------------------------------------------------- Fountains Filters
                     if (facility == SelectedFacilitiy.FOUNTAIN) RadioListTile<FountainLocation>(
                                                                   title: const Text('Inside'),
                                                                   value: FountainLocation.INSIDE,
@@ -1197,7 +1212,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                                                                     });
                                                                   },
                                                                 ),
-                                                                
+
+                      //---------------------------------------------------- Filters for All
                     Divider(),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -1205,7 +1221,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     ),
                     Slider(
                       value: filters[6],
-                      max: 50,
+                      max: 10,
                       divisions: 20,
                       label: filters[6].toStringAsFixed(1),
                       onChanged: (double value) {
@@ -1214,9 +1230,10 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                         });
                       },
                     ),
+                    
                     Divider(),
+                    
                     Row(
-                      
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -1231,6 +1248,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     )
                   ],
                 ),
+                
+                //---------------------------------------------------- Pin Information Page
                 if (kIsWeb && _selectedMarker != null) Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
@@ -1243,7 +1262,6 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                   ),
                   child: Column(
                     children: [
-
                       // Title + close button row
                       SizedBox(height: 16),
                       Padding(
@@ -1398,6 +1416,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
+
+                //---------------------------------------------------- Navigation Page
                 if (kIsWeb && navList['dest']!=null) Container(
                   child: ListView(
                     children: navList['nav'],
@@ -1408,6 +1428,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
           )
         )
       ),
+
       body: Stack(
         children: [
           GestureDetector(
@@ -1423,6 +1444,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
             child: buildMap(_animatedMapController, context, _filteredmarkers, _polylines, _circles, _posAdded, _selectedMarker, _alignPositionStreamController, _alignPositionOnUpdate, _handlePinTap, _markerMetadata),
           ),
 
+          //---------------------------------------------------- Bottom Sheet for mobile
           if (_isBottomSheetVisible && !kIsWeb)
             Align(
               alignment: Alignment.bottomCenter,
@@ -1465,6 +1487,7 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
               ),
             ),
 
+          //---------------------------------------------------- Floating Search bar
           FloatingSearchBar(
             controller: _controller,
             hint: 'Search...',
@@ -1527,6 +1550,8 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
               );
             },
           ),
+
+          //---------------------------------------------------- "Move to Current Location" button
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
@@ -1554,8 +1579,4 @@ class _MapWidget extends State<MapWidget> with TickerProviderStateMixin {
       ),
     );
   }
-
-  
-  
-  
 }
